@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ApiError } from "@/lib/errors";
+import { apiErrorMessage } from "@/lib/errors";
 import { useSessionStore } from "@/lib/stores/session-store";
 import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
 
@@ -53,12 +53,12 @@ export function ConsentForm() {
     }
   };
 
-  const submitError =
-    consentMutation.error instanceof ApiError
-      ? consentMutation.error.message
-      : consentMutation.isError
-        ? "동의 저장에 실패했습니다. 잠시 후 다시 시도해 주세요."
-        : null;
+  const submitError = apiErrorMessage(
+    consentMutation.error,
+    consentMutation.isError
+      ? "동의 저장에 실패했습니다. 잠시 후 다시 시도해 주세요."
+      : undefined,
+  );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

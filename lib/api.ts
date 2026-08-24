@@ -4,24 +4,26 @@ import type {
   GetComparisonResponse,
   GetReportResponse,
   GetSessionResponse,
-  RegisterPhoneRequest,
-  RegisterPhoneResponse,
+  RequestOtpRequest,
+  RequestOtpResponse,
   SubmitConsentRequest,
   SubmitConsentResponse,
+  VerifyPhoneRequest,
+  VerifyPhoneResponse,
 } from "@/lib/types";
 
 /**
- * 백엔드 연동 시 예상 엔드포인트 (확정 전, 교체 지점)
- *
  * POST /v1/consents
- * POST /v1/sessions/:sessionId/phone
+ * POST /v1/sessions/:sessionId/phone/otp     — 인증코드·수신번호 발급. 번호를 확정하지 않음
+ * POST /v1/sessions/:sessionId/phone/verify  — 옥토모 수신 확인 후에만 번호 등록 + 발신 대기
  * GET  /v1/sessions/:sessionId
- * GET  /v1/sessions/:sessionId/report   — 보이스피싱 시뮬레이션 1차 리포트
- * GET  /v1/sessions/:sessionId/result   — 시뮬레이션 vs 불시 보이스피싱 훈련 비교
+ * GET  /v1/sessions/:sessionId/report
+ * GET  /v1/sessions/:sessionId/result
  */
 export interface ApiClient {
   submitConsent(body: SubmitConsentRequest): Promise<SubmitConsentResponse>;
-  registerPhone(body: RegisterPhoneRequest): Promise<RegisterPhoneResponse>;
+  requestPhoneOtp(body: RequestOtpRequest): Promise<RequestOtpResponse>;
+  verifyPhone(body: VerifyPhoneRequest): Promise<VerifyPhoneResponse>;
   getSession(sessionId: string): Promise<GetSessionResponse>;
   getAnnouncedReport(sessionId: string): Promise<GetReportResponse>;
   getComparisonResult(sessionId: string): Promise<GetComparisonResponse>;
@@ -30,7 +32,8 @@ export interface ApiClient {
 export { ApiError } from "@/lib/errors";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+/** 브라우저는 same-origin `/v1`을 호출하고, Next rewrites가 백엔드로 넘긴다. */
+const BASE_URL = "";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -66,11 +69,23 @@ const liveApi: ApiClient = {
       body: JSON.stringify(body),
     });
   },
-  registerPhone({ sessionId, phoneNumber }) {
-    return request<RegisterPhoneResponse>(`/v1/sessions/${sessionId}/phone`, {
-      method: "POST",
-      body: JSON.stringify({ phoneNumber }),
-    });
+  requestPhoneOtp({ sessionId, phoneNumber }) {
+    return request<RequestOtpResponse>(
+      `/v1/sessions/${sessionId}/phone/otp`,
+      {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber }),
+      },
+    );
+  },
+  verifyPhone({ sessionId, phoneNumber, code }) {
+    return request<VerifyPhoneResponse>(
+      `/v1/sessions/${sessionId}/phone/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber, code }),
+      },
+    );
   },
   getSession(sessionId) {
     return request<GetSessionResponse>(`/v1/sessions/${sessionId}`);

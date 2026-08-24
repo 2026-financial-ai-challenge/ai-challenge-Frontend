@@ -16,8 +16,8 @@ export default function RegisterPage() {
         휴대전화번호 등록
       </h1>
       <p className="mt-3 text-sm leading-6 text-navy-600">
-        등록한 번호로 보이스피싱 시뮬레이션 전화가 걸립니다. 불시 보이스피싱
-        훈련의 발신 시점은 따로 안내하지 않습니다.
+        이 폰에서 인증코드를 보내 번호를 확인한 뒤에만 등록됩니다. 불시 보이스피싱 훈련의 발신 시점은 따로 안내하지
+        않습니다.
       </p>
       <Card className="mt-8 p-6">
         <RegisterForm />

@@ -1,18 +1,18 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const phoneSchema = z.object({
   phoneNumber: z
     .string()
     .transform((value) => value.replace(/\D/g, ""))
-    .refine((value) => /^01[016789]\d{7,8}$/.test(value), {
-      message: "휴대전화번호 11자리(또는 10자리)를 입력해 주세요.",
+    .refine((value) => /^010\d{8}$/.test(value), {
+      message: "010으로 시작하는 휴대전화번호 11자리를 입력해 주세요.",
     }),
 });
 
@@ -22,6 +22,7 @@ type PhoneFormProps = {
   onSubmit: (phoneNumber: string) => Promise<void> | void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
+  defaultPhoneNumber?: string;
 };
 
 function formatPhoneInput(value: string) {
@@ -35,6 +36,7 @@ export function PhoneForm({
   onSubmit,
   isSubmitting = false,
   errorMessage,
+  defaultPhoneNumber = "",
 }: PhoneFormProps) {
   const {
     register,
@@ -43,7 +45,11 @@ export function PhoneForm({
     formState: { errors },
   } = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneSchema),
-    defaultValues: { phoneNumber: "" },
+    defaultValues: {
+      phoneNumber: defaultPhoneNumber
+        ? formatPhoneInput(defaultPhoneNumber)
+        : "",
+    },
   });
 
   return (
@@ -56,7 +62,8 @@ export function PhoneForm({
           휴대전화번호
         </Label>
         <p className="mt-1 text-sm text-muted-foreground">
-          훈련 전화를 받을 번호만 입력합니다. 다른 개인정보는 받지 않습니다.
+          훈련 전화를 받을 번호입니다. 이 폰에서 인증코드를 보내 본인 번호인지
+          확인한 뒤에만 등록됩니다.
         </p>
         <Input
           id="phoneNumber"
@@ -89,7 +96,7 @@ export function PhoneForm({
       ) : null}
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "요청 중..." : "보이스피싱 시뮬레이션 시작"}
+        {isSubmitting ? "인증 준비 중..." : "인증 시작"}
       </Button>
     </form>
   );
