@@ -8,8 +8,6 @@ export const OTP_MAX_SENDS = 5;
 export const OCTOMO_SEND_TO = "16663538";
 export const MOCK_OTP_CODE = "123456";
 
-export const USE_MOCK_API = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
-
 export const OTP_ERROR = {
   INVALID_PHONE: "INVALID_PHONE",
   OTP_NOT_REQUESTED: "OTP_NOT_REQUESTED",

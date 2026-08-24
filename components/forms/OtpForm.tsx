@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { OTP_ERROR, USE_MOCK_API, formatMoNumber, smsDeepLink } from "@/lib/otp";
+import { OTP_ERROR, formatMoNumber, smsDeepLink } from "@/lib/otp";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 type OtpFormProps = {
@@ -125,12 +125,6 @@ export function OtpForm({
           </Button>
         </div>
       </div>
-
-      {USE_MOCK_API ? (
-        <p className="text-xs text-navy-400">
-          개발용 목 모드에서는 문자를 보내지 않고 전송 완료를 누르면 됩니다.
-        </p>
-      ) : null}
 
       {errorMessage ? (
         <p className="text-sm text-destructive" role="alert">
