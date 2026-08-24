@@ -1,18 +1,38 @@
 "use client";
 
+import { OtpForm } from "@/components/forms/OtpForm";
 import { PhoneForm } from "@/components/forms/PhoneForm";
-import { ApiError } from "@/lib/errors";
+import {
+  useRequestPhoneOtpMutation,
+  useVerifyPhoneMutation,
+} from "@/hooks/use-training-queries";
+import { ApiError, apiErrorMessage } from "@/lib/errors";
+import { OTP_ERROR } from "@/lib/otp";
 import { useSessionStore } from "@/lib/stores/session-store";
-import { useRegisterPhoneMutation } from "@/hooks/use-training-queries";
+import type { RequestOtpResponse } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+type OtpTicket = {
+  phoneNumber: string;
+  phoneNumberMasked: string;
+  code: string;
+  sendToNumber: string;
+  expiresAt: number;
+  resendAt: number;
+  nonce: number;
+};
 
 export function RegisterForm() {
   const router = useRouter();
   const sessionId = useSessionStore((state) => state.sessionId);
   const hasHydrated = useSessionStore((state) => state.hasHydrated);
   const setSessionId = useSessionStore((state) => state.setSessionId);
-  const registerMutation = useRegisterPhoneMutation();
+  const requestOtpMutation = useRequestPhoneOtpMutation();
+  const verifyMutation = useVerifyPhoneMutation();
+  const [enteredPhone, setEnteredPhone] = useState("");
+  const [otpTicket, setOtpTicket] = useState<OtpTicket | null>(null);
+  const [errorNonce, setErrorNonce] = useState(0);
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -29,31 +49,109 @@ export function RegisterForm() {
     );
   }
 
-  const handleSubmit = async (phoneNumber: string) => {
+  const handleSessionMissing = (error: unknown) => {
+    if (error instanceof ApiError && error.code === OTP_ERROR.SESSION_NOT_FOUND) {
+      setSessionId(null);
+      router.replace("/consent");
+      return true;
+    }
+    return false;
+  };
+
+  const applyOtpResponse = (phoneNumber: string, response: RequestOtpResponse) => {
+    const now = Date.now();
+    setOtpTicket({
+      phoneNumber,
+      phoneNumberMasked: response.phoneNumberMasked,
+      code: response.code,
+      sendToNumber: response.sendToNumber,
+      expiresAt: now + response.expiresInSec * 1000,
+      resendAt: now + response.resendAvailableInSec * 1000,
+      nonce: now,
+    });
+  };
+
+  const handleRequestOtp = async (phoneNumber: string) => {
     try {
-      const { session } = await registerMutation.mutateAsync({
+      verifyMutation.reset();
+      setEnteredPhone(phoneNumber);
+      const response = await requestOtpMutation.mutateAsync({
         sessionId,
         phoneNumber,
       });
-      setSessionId(session.id);
-      router.push(`/status/${session.id}`);
-    } catch {
-      // error is read from mutation state
+      applyOtpResponse(phoneNumber, response);
+    } catch (error) {
+      setErrorNonce((value) => value + 1);
+      handleSessionMissing(error);
     }
   };
 
-  const errorMessage =
-    registerMutation.error instanceof ApiError
-      ? registerMutation.error.message
-      : registerMutation.isError
-        ? "번호 등록에 실패했습니다. 잠시 후 다시 시도해 주세요."
-        : null;
+  const handleResend = async () => {
+    if (!otpTicket) return;
+    await handleRequestOtp(otpTicket.phoneNumber);
+  };
+
+  const handleConfirm = async () => {
+    if (!otpTicket) return;
+    try {
+      const { session } = await verifyMutation.mutateAsync({
+        sessionId,
+        phoneNumber: otpTicket.phoneNumber,
+        code: otpTicket.code,
+      });
+      if (!session.phoneNumberMasked || !session.callStatus) {
+        return;
+      }
+      setSessionId(session.id);
+      router.push(`/status/${session.id}`);
+    } catch (error) {
+      setErrorNonce((value) => value + 1);
+      handleSessionMissing(error);
+    }
+  };
+
+  const handleChangePhone = () => {
+    requestOtpMutation.reset();
+    verifyMutation.reset();
+    setOtpTicket(null);
+  };
+
+  if (otpTicket) {
+    const requestError = apiErrorMessage(requestOtpMutation.error);
+    const verifyError = apiErrorMessage(verifyMutation.error);
+    const error =
+      requestOtpMutation.isError && requestError
+        ? requestOtpMutation.error
+        : verifyMutation.isError
+          ? verifyMutation.error
+          : null;
+    const errorCode = error instanceof ApiError ? error.code : undefined;
+
+    return (
+      <OtpForm
+        key={`${otpTicket.nonce}-${errorNonce}`}
+        phoneNumberMasked={otpTicket.phoneNumberMasked}
+        code={otpTicket.code}
+        sendToNumber={otpTicket.sendToNumber}
+        expiresAt={otpTicket.expiresAt}
+        resendAt={otpTicket.resendAt}
+        onConfirm={handleConfirm}
+        onResend={handleResend}
+        onChangePhone={handleChangePhone}
+        isSubmitting={verifyMutation.isPending}
+        isResending={requestOtpMutation.isPending}
+        errorMessage={requestError ?? verifyError}
+        errorCode={errorCode}
+      />
+    );
+  }
 
   return (
     <PhoneForm
-      onSubmit={handleSubmit}
-      isSubmitting={registerMutation.isPending}
-      errorMessage={errorMessage}
+      defaultPhoneNumber={enteredPhone}
+      onSubmit={handleRequestOtp}
+      isSubmitting={requestOtpMutation.isPending}
+      errorMessage={apiErrorMessage(requestOtpMutation.error)}
     />
   );
 }

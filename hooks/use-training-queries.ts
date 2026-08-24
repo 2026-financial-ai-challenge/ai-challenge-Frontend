@@ -2,7 +2,11 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { RegisterPhoneRequest, SubmitConsentRequest } from "@/lib/types";
+import type {
+  RequestOtpRequest,
+  SubmitConsentRequest,
+  VerifyPhoneRequest,
+} from "@/lib/types";
 
 export const queryKeys = {
   session: (sessionId: string) => ["session", sessionId] as const,
@@ -16,9 +20,15 @@ export function useSubmitConsentMutation() {
   });
 }
 
-export function useRegisterPhoneMutation() {
+export function useRequestPhoneOtpMutation() {
   return useMutation({
-    mutationFn: (body: RegisterPhoneRequest) => api.registerPhone(body),
+    mutationFn: (body: RequestOtpRequest) => api.requestPhoneOtp(body),
+  });
+}
+
+export function useVerifyPhoneMutation() {
+  return useMutation({
+    mutationFn: (body: VerifyPhoneRequest) => api.verifyPhone(body),
   });
 }
 
@@ -29,7 +39,7 @@ export function useSessionQuery(sessionId: string | undefined) {
     enabled: Boolean(sessionId),
     refetchInterval: (query) => {
       const status = query.state.data?.session.callStatus;
-      if (status === "completed") return false;
+      if (!status || status === "completed") return false;
       return 3000;
     },
   });

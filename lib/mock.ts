@@ -1,24 +1,44 @@
 import { ApiError } from "@/lib/errors";
+import {
+  MOCK_OTP_CODE,
+  OCTOMO_SEND_TO,
+  OTP_EXPIRES_IN_SEC,
+  OTP_MAX_ATTEMPTS,
+  OTP_MAX_SENDS,
+  OTP_RESEND_COOLDOWN_SEC,
+} from "@/lib/otp";
 import type {
   BehaviorItem,
   ComparisonResult,
   GetComparisonResponse,
   GetReportResponse,
   GetSessionResponse,
-  RegisterPhoneRequest,
-  RegisterPhoneResponse,
+  RequestOtpRequest,
+  RequestOtpResponse,
   Session,
   SubmitConsentRequest,
   SubmitConsentResponse,
   TrainingResult,
+  VerifyPhoneRequest,
+  VerifyPhoneResponse,
 } from "@/lib/types";
 
 const DELAY_MS = 450;
+
+type PendingOtp = {
+  phoneDigits: string;
+  code: string;
+  expiresAtMs: number;
+  resendAvailableAtMs: number;
+  attempts: number;
+  sendCount: number;
+};
 
 type MockStore = {
   sessions: Record<string, Session>;
   announced: Record<string, TrainingResult>;
   unannounced: Record<string, TrainingResult>;
+  otps: Record<string, PendingOtp>;
 };
 
 function nowIso() {
@@ -201,6 +221,7 @@ function seedStore(): MockStore {
     sessions: { [DEMO_SESSION_ID]: demoSession },
     announced: { [DEMO_SESSION_ID]: announced },
     unannounced: { [DEMO_SESSION_ID]: unannounced },
+    otps: {},
   };
 }
 
@@ -235,6 +256,7 @@ function getStore(): MockStore {
           sessions: { ...seeded.sessions, ...stored.sessions },
           announced: { ...seeded.announced, ...stored.announced },
           unannounced: { ...seeded.unannounced, ...stored.unannounced },
+          otps: { ...seeded.otps, ...(stored.otps ?? {}) },
         }
       : seeded;
   }
@@ -281,20 +303,125 @@ export const mockApi = {
     return { sessionId: session.id };
   },
 
-  async registerPhone({
+  async requestPhoneOtp({
     sessionId,
     phoneNumber,
-  }: RegisterPhoneRequest): Promise<RegisterPhoneResponse> {
+  }: RequestOtpRequest): Promise<RequestOtpResponse> {
+    await wait();
+
+    requireSession(sessionId);
+    const digits = phoneNumber.replace(/\D/g, "");
+
+    if (!/^010\d{8}$/.test(digits)) {
+      throw new ApiError(
+        "010으로 시작하는 휴대전화번호 11자리를 입력해 주세요.",
+        400,
+        "INVALID_PHONE",
+      );
+    }
+
+    const store = getStore();
+    const existing = store.otps[sessionId];
+    const now = Date.now();
+
+    if (
+      existing &&
+      existing.phoneDigits === digits &&
+      now < existing.resendAvailableAtMs
+    ) {
+      const waitSec = Math.ceil((existing.resendAvailableAtMs - now) / 1000);
+      throw new ApiError(
+        `인증번호는 ${waitSec}초 후 다시 요청할 수 있습니다.`,
+        429,
+        "OTP_COOLDOWN",
+      );
+    }
+
+    const sendCount =
+      existing && existing.phoneDigits === digits ? existing.sendCount + 1 : 1;
+
+    if (sendCount > OTP_MAX_SENDS) {
+      throw new ApiError(
+        "인증번호 요청 횟수를 초과했습니다. 잠시 후 다시 시도해 주세요.",
+        429,
+        "OTP_RATE_LIMITED",
+      );
+    }
+
+    store.otps[sessionId] = {
+      phoneDigits: digits,
+      code: MOCK_OTP_CODE,
+      expiresAtMs: now + OTP_EXPIRES_IN_SEC * 1000,
+      resendAvailableAtMs: now + OTP_RESEND_COOLDOWN_SEC * 1000,
+      attempts: 0,
+      sendCount,
+    };
+    persistStore(store);
+
+    return {
+      phoneNumberMasked: maskPhoneNumber(digits),
+      code: MOCK_OTP_CODE,
+      sendToNumber: OCTOMO_SEND_TO,
+      expiresInSec: OTP_EXPIRES_IN_SEC,
+      resendAvailableInSec: OTP_RESEND_COOLDOWN_SEC,
+    };
+  },
+
+  async verifyPhone({
+    sessionId,
+    phoneNumber,
+    code,
+  }: VerifyPhoneRequest): Promise<VerifyPhoneResponse> {
     await wait();
 
     const session = requireSession(sessionId);
     const digits = phoneNumber.replace(/\D/g, "");
+    const normalizedCode = code.replace(/\D/g, "");
+    const store = getStore();
+    const pending = store.otps[sessionId];
 
-    if (!/^01[016789]\d{7,8}$/.test(digits)) {
+    if (!pending) {
       throw new ApiError(
-        "올바른 휴대전화번호 형식이 아닙니다.",
+        "인증번호를 먼저 요청해 주세요.",
         400,
-        "INVALID_PHONE",
+        "OTP_NOT_REQUESTED",
+      );
+    }
+
+    if (pending.phoneDigits !== digits) {
+      throw new ApiError(
+        "인증번호를 받은 번호와 일치하지 않습니다. 번호를 다시 확인해 주세요.",
+        400,
+        "OTP_PHONE_MISMATCH",
+      );
+    }
+
+    if (Date.now() > pending.expiresAtMs) {
+      throw new ApiError(
+        "인증번호가 만료되었습니다. 다시 받아 주세요.",
+        400,
+        "OTP_EXPIRED",
+      );
+    }
+
+    if (pending.attempts >= OTP_MAX_ATTEMPTS) {
+      throw new ApiError(
+        "인증 시도 횟수를 초과했습니다. 인증번호를 다시 받아 주세요.",
+        429,
+        "OTP_LOCKED",
+      );
+    }
+
+    if (pending.code !== normalizedCode) {
+      pending.attempts += 1;
+      persistStore(store);
+      const remaining = OTP_MAX_ATTEMPTS - pending.attempts;
+      throw new ApiError(
+        remaining > 0
+          ? `인증번호가 올바르지 않습니다. (${remaining}회 남음)`
+          : "인증 시도 횟수를 초과했습니다. 인증번호를 다시 받아 주세요.",
+        400,
+        remaining > 0 ? "OTP_INVALID" : "OTP_LOCKED",
       );
     }
 
@@ -307,8 +434,9 @@ export const mockApi = {
       updatedAt: timestamp,
     };
 
-    getStore().sessions[sessionId] = updated;
-    persistStore(getStore());
+    store.sessions[sessionId] = updated;
+    delete store.otps[sessionId];
+    persistStore(store);
     return { session: updated };
   },
 

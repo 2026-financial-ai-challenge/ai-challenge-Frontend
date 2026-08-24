@@ -71,12 +71,26 @@ export interface SubmitConsentResponse {
   sessionId: string;
 }
 
-export interface RegisterPhoneRequest {
+export interface RequestOtpRequest {
   sessionId: string;
   phoneNumber: string;
 }
 
-export interface RegisterPhoneResponse {
+export interface RequestOtpResponse {
+  phoneNumberMasked: string;
+  code: string;
+  sendToNumber: string;
+  expiresInSec: number;
+  resendAvailableInSec: number;
+}
+
+export interface VerifyPhoneRequest {
+  sessionId: string;
+  phoneNumber: string;
+  code: string;
+}
+
+export interface VerifyPhoneResponse {
   session: Session;
 }
 
