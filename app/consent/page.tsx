@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function ConsentPage() {
   return (
     <div className="mx-auto max-w-xl px-5 py-12 sm:py-16">
-      <BrandImage name="mascot" alt="" className="h-16 w-16" />
+      <BrandImage name="mascot" alt="" className="h-16 w-16" priority />
       <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy-900">
         훈련 참여 동의
       </h1>

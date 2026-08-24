@@ -29,6 +29,7 @@ export function BrandImage({ name, alt, className, priority }: BrandImageProps) 
       width={asset.width}
       height={asset.height}
       priority={priority}
+      loading={priority ? "eager" : "lazy"}
       className={`object-contain ${className ?? ""}`}
     />
   );

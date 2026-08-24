@@ -25,7 +25,7 @@ export interface ApiClient {
   requestPhoneOtp(body: RequestOtpRequest): Promise<RequestOtpResponse>;
   verifyPhone(body: VerifyPhoneRequest): Promise<VerifyPhoneResponse>;
   getSession(sessionId: string): Promise<GetSessionResponse>;
-  getAnnouncedReport(sessionId: string): Promise<GetReportResponse>;
+  getReport(sessionId: string): Promise<GetReportResponse>;
   getComparisonResult(sessionId: string): Promise<GetComparisonResponse>;
 }
 
@@ -90,7 +90,7 @@ const liveApi: ApiClient = {
   getSession(sessionId) {
     return request<GetSessionResponse>(`/v1/sessions/${sessionId}`);
   },
-  getAnnouncedReport(sessionId) {
+  getReport(sessionId) {
     return request<GetReportResponse>(`/v1/sessions/${sessionId}/report`);
   },
   getComparisonResult(sessionId) {

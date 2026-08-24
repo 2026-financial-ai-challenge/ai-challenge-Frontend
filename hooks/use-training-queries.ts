@@ -1,8 +1,16 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { isReportReady } from "@/lib/types";
 import type {
+  ReportStatus,
   RequestOtpRequest,
   SubmitConsentRequest,
   VerifyPhoneRequest,
@@ -10,9 +18,28 @@ import type {
 
 export const queryKeys = {
   session: (sessionId: string) => ["session", sessionId] as const,
-  report: (sessionId: string) => ["report", sessionId] as const,
+  report: (sessionId: string, reportStatus: ReportStatus | null) =>
+    ["report", sessionId, reportStatus] as const,
   result: (sessionId: string) => ["result", sessionId] as const,
 };
+
+function useTabVisible() {
+  const [visible, setVisible] = useState(() =>
+    typeof document === "undefined"
+      ? true
+      : document.visibilityState === "visible",
+  );
+
+  useEffect(() => {
+    const onChange = () =>
+      setVisible(document.visibilityState === "visible");
+    onChange();
+    document.addEventListener("visibilitychange", onChange);
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, []);
+
+  return visible;
+}
 
 export function useSubmitConsentMutation() {
   return useMutation({
@@ -33,24 +60,73 @@ export function useVerifyPhoneMutation() {
 }
 
 export function useSessionQuery(sessionId: string | undefined) {
+  const visible = useTabVisible();
+  const queryClient = useQueryClient();
+  const startedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    startedAtRef.current = Date.now();
+    if (!sessionId) return;
+    for (const query of queryClient.getQueryCache().findAll({
+      queryKey: ["session"],
+    })) {
+      if (query.queryKey[1] !== sessionId) {
+        void queryClient.cancelQueries({ queryKey: query.queryKey });
+        queryClient.removeQueries({ queryKey: query.queryKey });
+      }
+    }
+  }, [sessionId, queryClient]);
+
   return useQuery({
     queryKey: queryKeys.session(sessionId ?? ""),
     queryFn: () => api.getSession(sessionId!),
-    enabled: Boolean(sessionId),
+    enabled: Boolean(sessionId) && visible,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchIntervalInBackground: false,
     refetchInterval: (query) => {
-      const status = query.state.data?.session.callStatus;
-      if (!status || status === "completed") return false;
+      const session = query.state.data?.session;
+      if (!session?.callStatus) return false;
+      if (
+        session.reportStatus === "draft" ||
+        session.reportStatus === "final" ||
+        session.reportStatus === "failed"
+      ) {
+        return false;
+      }
+      if (Date.now() - startedAtRef.current > 120_000) return false;
+      if (session.callStatus === "completed") {
+        const updated = Date.parse(session.updatedAt);
+        if (Number.isFinite(updated) && Date.now() - updated > 20_000) {
+          return false;
+        }
+      }
       return 3000;
     },
   });
 }
 
-export function useAnnouncedReportQuery(sessionId: string | undefined) {
+export function useReportQuery(
+  sessionId: string | undefined,
+  reportStatus: ReportStatus | null | undefined,
+) {
+  const visible = useTabVisible();
+  const ready = isReportReady(reportStatus);
+
   return useQuery({
-    queryKey: queryKeys.report(sessionId ?? ""),
-    queryFn: () => api.getAnnouncedReport(sessionId!),
-    enabled: Boolean(sessionId),
+    queryKey: queryKeys.report(sessionId ?? "", reportStatus ?? null),
+    queryFn: () => api.getReport(sessionId!),
+    enabled: Boolean(sessionId) && ready && visible,
     retry: false,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchIntervalInBackground: false,
+    refetchInterval: (query) => {
+      if (query.state.data?.status === "final") return false;
+      if (!ready) return false;
+      return 15_000;
+    },
   });
 }
 

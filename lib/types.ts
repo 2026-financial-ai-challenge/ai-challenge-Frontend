@@ -1,6 +1,9 @@
 /** 서버가 알려주는 통화 상태. 웹에는 통화 UI를 두지 않는다. */
 export type CallStatus = "waiting" | "calling" | "completed";
 
+/** 통화 종료 후 리포트 생성 단계. 통화 전이면 null 또는 none. */
+export type ReportStatus = "none" | "pending" | "draft" | "final" | "failed";
+
 /** 보이스피싱 시뮬레이션(사전 안내 후 발신) / 불시 보이스피싱 훈련(시점 비공개 발신) */
 export type TrainingType = "announced" | "unannounced";
 
@@ -23,6 +26,10 @@ export interface Session {
   phoneNumberMasked: string | null;
   /** 전화번호 등록 전이면 null */
   callStatus: CallStatus | null;
+  /** 발신 전이면 null */
+  callId: string | null;
+  /** 통화 전이면 null. draft면 1차, final이면 최종 리포트 */
+  reportStatus: ReportStatus | null;
   currentTrainingType: TrainingType;
   consents: ConsentRecord;
   createdAt: string;
@@ -98,8 +105,41 @@ export interface GetSessionResponse {
   session: Session;
 }
 
+export interface ReportTurn {
+  role: "user" | "assistant";
+  text: string;
+}
+
+export interface ReportBehavior {
+  label: string;
+  evidence: string;
+}
+
+export interface CallReport {
+  suspected: boolean;
+  gaveName: boolean;
+  triedHangup: boolean;
+  summary: string;
+  coaching: string;
+  riskBehaviors: ReportBehavior[];
+  defenseBehaviors: ReportBehavior[];
+  source: string;
+}
+
 export interface GetReportResponse {
-  result: TrainingResult;
+  sessionId: string;
+  callId: string | null;
+  status: ReportStatus;
+  turns: ReportTurn[];
+  draft: CallReport | null;
+  final: CallReport | null;
+  clawopsSummary?: unknown;
+}
+
+export function isReportReady(
+  status: ReportStatus | null | undefined,
+): status is "draft" | "final" {
+  return status === "draft" || status === "final";
 }
 
 export interface GetComparisonResponse {
