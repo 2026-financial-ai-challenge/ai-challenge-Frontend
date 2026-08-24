@@ -1,16 +1,16 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
 import { apiErrorMessage } from "@/lib/errors";
 import { useSessionStore } from "@/lib/stores/session-store";
-import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 
 const consentSchema = z.object({
   privacy: z.boolean().refine((value) => value === true, {
@@ -84,15 +84,19 @@ export function ConsentForm() {
             name="privacy"
             control={control}
             render={({ field }) => (
-              <div className="mt-4 flex items-start gap-3">
+              <div className="mt-4 flex items-start gap-2.5">
                 <Checkbox
                   id="privacy"
+                  className="mt-0.5"
                   checked={field.value}
                   onCheckedChange={(checked) => field.onChange(checked === true)}
                   aria-invalid={errors.privacy ? "true" : "false"}
                   aria-describedby={errors.privacy ? "privacy-error" : undefined}
                 />
-                <Label htmlFor="privacy" className="cursor-pointer leading-5 text-navy-800">
+                <Label
+                  htmlFor="privacy"
+                  className="cursor-pointer leading-5 text-navy-800"
+                >
                   위 내용을 확인했으며, 개인정보 수집·이용에 동의합니다.
                 </Label>
               </div>
@@ -128,9 +132,10 @@ export function ConsentForm() {
             name="unannouncedTraining"
             control={control}
             render={({ field }) => (
-              <div className="mt-4 flex items-start gap-3">
+              <div className="mt-4 flex items-start gap-2.5">
                 <Checkbox
                   id="unannouncedTraining"
+                  className="mt-0.5"
                   checked={field.value}
                   onCheckedChange={(checked) => field.onChange(checked === true)}
                   aria-invalid={errors.unannouncedTraining ? "true" : "false"}

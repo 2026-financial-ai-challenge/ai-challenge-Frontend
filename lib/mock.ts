@@ -1,10 +1,12 @@
 import { ApiError } from "@/lib/errors";
 import type {
   BehaviorItem,
+  CallReport,
   ComparisonResult,
   GetComparisonResponse,
   GetReportResponse,
   GetSessionResponse,
+  ReportTurn,
   RequestOtpRequest,
   RequestOtpResponse,
   Session,
@@ -36,6 +38,7 @@ type MockStore = {
   sessions: Record<string, Session>;
   announced: Record<string, TrainingResult>;
   unannounced: Record<string, TrainingResult>;
+  reports: Record<string, GetReportResponse>;
   otps: Record<string, PendingOtp>;
 };
 
@@ -177,6 +180,8 @@ function seedStore(): MockStore {
     id: DEMO_SESSION_ID,
     phoneNumberMasked: "010-****-4567",
     callStatus: "completed",
+    callId: "CA_demo",
+    reportStatus: "draft",
     currentTrainingType: "unannounced",
     consents: {
       privacy: true,
@@ -186,6 +191,30 @@ function seedStore(): MockStore {
     createdAt,
     updatedAt: "2026-08-19T14:40:00.000Z",
   };
+
+  const demoDraft: CallReport = {
+    suspected: true,
+    gaveName: true,
+    triedHangup: false,
+    summary:
+      "상대가 검찰을 사칭해 계좌 연루를 주장했습니다. 훈련자는 신원을 물었으나 성함을 말했고, 통화를 끊지는 않았습니다.",
+    coaching:
+      "기관은 전화로 개인정보를 받지 않습니다. 이름을 말하기 전에 공식 번호로 다시 걸고, 의심되면 바로 끊으세요.",
+    riskBehaviors: [
+      { label: "개인정보 제공", evidence: "김민수입니다" },
+    ],
+    defenseBehaviors: [
+      { label: "상대방 신원 확인", evidence: "어디시라고요? 검찰이요?" },
+    ],
+    source: "live",
+  };
+
+  const demoTurns: ReportTurn[] = [
+    { role: "assistant", text: "검찰입니다. 명의가 도용되었습니다." },
+    { role: "user", text: "어디시라고요? 검찰이요?" },
+    { role: "assistant", text: "본인 성함 확인하겠습니다." },
+    { role: "user", text: "김민수입니다" },
+  ];
 
   const announced: TrainingResult = {
     sessionId: DEMO_SESSION_ID,
@@ -219,6 +248,17 @@ function seedStore(): MockStore {
     sessions: { [DEMO_SESSION_ID]: demoSession },
     announced: { [DEMO_SESSION_ID]: announced },
     unannounced: { [DEMO_SESSION_ID]: unannounced },
+    reports: {
+      [DEMO_SESSION_ID]: {
+        sessionId: DEMO_SESSION_ID,
+        callId: "CA_demo",
+        status: "draft",
+        turns: demoTurns,
+        draft: demoDraft,
+        final: null,
+        clawopsSummary: null,
+      },
+    },
     otps: {},
   };
 }
@@ -254,6 +294,7 @@ function getStore(): MockStore {
           sessions: { ...seeded.sessions, ...stored.sessions },
           announced: { ...seeded.announced, ...stored.announced },
           unannounced: { ...seeded.unannounced, ...stored.unannounced },
+          reports: { ...seeded.reports, ...(stored.reports ?? {}) },
           otps: { ...seeded.otps, ...(stored.otps ?? {}) },
         }
       : seeded;
@@ -286,6 +327,8 @@ export const mockApi = {
       id: createId("ses"),
       phoneNumberMasked: null,
       callStatus: null,
+      callId: null,
+      reportStatus: null,
       currentTrainingType: "announced",
       consents: {
         privacy: true,
@@ -428,6 +471,8 @@ export const mockApi = {
       ...session,
       phoneNumberMasked: maskPhoneNumber(digits),
       callStatus: "waiting",
+      callId: null,
+      reportStatus: null,
       currentTrainingType: "announced",
       updatedAt: timestamp,
     };
@@ -443,20 +488,20 @@ export const mockApi = {
     return { session: requireSession(sessionId) };
   },
 
-  async getAnnouncedReport(sessionId: string): Promise<GetReportResponse> {
+  async getReport(sessionId: string): Promise<GetReportResponse> {
     await wait();
     requireSession(sessionId);
 
-    const result = getStore().announced[sessionId];
-    if (!result) {
+    const report = getStore().reports[sessionId];
+    if (!report || (report.status !== "draft" && report.status !== "final")) {
       throw new ApiError(
-        "보이스피싱 시뮬레이션 리포트가 아직 준비되지 않았습니다.",
+        "리포트가 아직 준비되지 않았습니다.",
         409,
         "REPORT_NOT_READY",
       );
     }
 
-    return { result };
+    return report;
   },
 
   async getComparisonResult(sessionId: string): Promise<GetComparisonResponse> {
