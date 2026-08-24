@@ -1,13 +1,3 @@
-/** 화면에 보여주는 인증코드 길이. 만료·재발송 초는 서버 응답 값을 쓴다. */
-export const OTP_CODE_LENGTH = 6;
-export const OTP_EXPIRES_IN_SEC = 300;
-export const OTP_RESEND_COOLDOWN_SEC = 60;
-export const OTP_MAX_ATTEMPTS = 5;
-export const OTP_MAX_SENDS = 5;
-
-export const OCTOMO_SEND_TO = "16663538";
-export const MOCK_OTP_CODE = "123456";
-
 export const OTP_ERROR = {
   INVALID_PHONE: "INVALID_PHONE",
   OTP_NOT_REQUESTED: "OTP_NOT_REQUESTED",

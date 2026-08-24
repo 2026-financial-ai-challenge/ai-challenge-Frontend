@@ -1,12 +1,4 @@
 import { ApiError } from "@/lib/errors";
-import {
-  MOCK_OTP_CODE,
-  OCTOMO_SEND_TO,
-  OTP_EXPIRES_IN_SEC,
-  OTP_MAX_ATTEMPTS,
-  OTP_MAX_SENDS,
-  OTP_RESEND_COOLDOWN_SEC,
-} from "@/lib/otp";
 import type {
   BehaviorItem,
   ComparisonResult,
@@ -24,6 +16,12 @@ import type {
 } from "@/lib/types";
 
 const DELAY_MS = 450;
+const MOCK_OTP_CODE = "123456";
+const OCTOMO_SEND_TO = "16663538";
+const OTP_EXPIRES_IN_SEC = 300;
+const OTP_RESEND_COOLDOWN_SEC = 60;
+const OTP_MAX_ATTEMPTS = 5;
+const OTP_MAX_SENDS = 5;
 
 type PendingOtp = {
   phoneDigits: string;
