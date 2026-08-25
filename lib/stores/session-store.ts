@@ -25,18 +25,34 @@ export const useSessionStore = create<SessionState>()(
       storage: createJSONStorage(() => ({
         getItem: (name) => {
           if (typeof window === "undefined") return null;
-          const current = sessionStorage.getItem(name);
+          const current = localStorage.getItem(name);
           if (current) return current;
-          const legacy = sessionStorage.getItem(LEGACY_KEY);
+          const legacy = localStorage.getItem(LEGACY_KEY);
+          const sessionValue =
+            sessionStorage.getItem(name) ?? sessionStorage.getItem(LEGACY_KEY);
+          if (sessionValue) {
+            const migrated = sessionValue.startsWith("{")
+              ? sessionValue
+              : JSON.stringify({ state: { sessionId: sessionValue }, version: 0 });
+            localStorage.setItem(name, migrated);
+            sessionStorage.removeItem(name);
+            sessionStorage.removeItem(LEGACY_KEY);
+            return migrated;
+          }
           if (!legacy) return null;
+          if (legacy.startsWith("{")) return legacy;
           return JSON.stringify({ state: { sessionId: legacy }, version: 0 });
         },
         setItem: (name, value) => {
           if (typeof window === "undefined") return;
-          sessionStorage.setItem(name, value);
+          localStorage.setItem(name, value);
+          sessionStorage.removeItem(name);
+          sessionStorage.removeItem(LEGACY_KEY);
         },
         removeItem: (name) => {
           if (typeof window === "undefined") return;
+          localStorage.removeItem(name);
+          localStorage.removeItem(LEGACY_KEY);
           sessionStorage.removeItem(name);
           sessionStorage.removeItem(LEGACY_KEY);
         },

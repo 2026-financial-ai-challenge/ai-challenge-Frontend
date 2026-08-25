@@ -193,6 +193,7 @@ function seedStore(): MockStore {
   };
 
   const demoDraft: CallReport = {
+    score: 53,
     suspected: true,
     gaveName: true,
     triedHangup: false,

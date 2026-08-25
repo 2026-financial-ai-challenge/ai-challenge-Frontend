@@ -116,6 +116,7 @@ export interface ReportBehavior {
 }
 
 export interface CallReport {
+  score: number;
   suspected: boolean;
   gaveName: boolean;
   triedHangup: boolean;

@@ -1,4 +1,5 @@
 import { BrandImage } from "@/components/brand/BrandImage";
+import { ScoreGauge } from "@/components/report/ScoreGauge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { CallReport, ReportBehavior, ReportTurn } from "@/lib/types";
@@ -67,6 +68,13 @@ export function TrainingReport({ status, body, turns }: TrainingReportProps) {
       ) : null}
 
       <Card className="p-5">
+        <ScoreGauge score={body.score} />
+        <p className="mx-auto mt-4 max-w-md text-center text-xs leading-5 text-navy-400">
+          기본 60점에서 감지된 방어 행동은 더하고, 위험 행동은 차감해 계산한 점수입니다.
+        </p>
+      </Card>
+
+      <Card className="p-5">
         <h3 className="text-sm font-semibold text-navy-900">이번 통화 요약</h3>
         <p className="mt-2 text-sm leading-6 text-navy-600">{body.summary}</p>
       </Card>
@@ -102,18 +110,53 @@ export function TrainingReport({ status, body, turns }: TrainingReportProps) {
 
       {turns.length > 0 ? (
         <Card className="overflow-hidden">
-          <div className="border-b border-brand-100 px-4 py-3">
-            <h3 className="text-sm font-semibold text-navy-900">대화 기록</h3>
+          <div className="flex items-center justify-between border-b border-brand-100 px-4 py-3">
+            <div>
+              <h3 className="text-sm font-semibold text-navy-900">대화 기록</h3>
+              <p className="mt-0.5 text-xs text-navy-400">
+                훈련 통화에서 오간 대화입니다.
+              </p>
+            </div>
+            <span className="flex items-center gap-1.5 text-xs font-medium text-navy-400">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
+              통화 종료
+            </span>
           </div>
-          <ul className="divide-y divide-brand-100">
-            {turns.map((turn, index) => (
-              <li key={`${turn.role}-${index}`} className="px-4 py-3">
-                <p className="text-xs font-medium text-navy-400">
-                  {turn.role === "user" ? "훈련자" : "상대"}
-                </p>
-                <p className="mt-1 text-sm leading-6 text-navy-700">{turn.text}</p>
-              </li>
-            ))}
+          <ul className="h-[26rem] space-y-4 overflow-y-auto overscroll-contain bg-navy-50/60 px-4 py-5 sm:h-[30rem] sm:px-5">
+            {turns.map((turn, index) => {
+              const isUser = turn.role === "user";
+
+              return (
+                <li
+                  key={`${turn.role}-${index}`}
+                  className={`flex items-end gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
+                >
+                  {!isUser ? (
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-brand-100 bg-white shadow-sm">
+                      <BrandImage name="phone" alt="" className="h-7 w-7" />
+                    </span>
+                  ) : null}
+                  <div
+                    className={`flex max-w-[82%] flex-col ${isUser ? "items-end" : "items-start"}`}
+                  >
+                    <p
+                      className={`mb-1 px-1 text-[11px] font-medium text-navy-400 ${isUser ? "text-right" : "text-left"}`}
+                    >
+                      {isUser ? "나" : "훈련 상대"}
+                    </p>
+                    <p
+                      className={
+                        isUser
+                          ? "rounded-[1.2rem] rounded-br-md bg-brand-500 px-4 py-2.5 text-sm leading-6 text-white shadow-sm"
+                          : "rounded-[1.2rem] rounded-bl-md border border-brand-100 bg-white px-4 py-2.5 text-sm leading-6 text-navy-700 shadow-sm"
+                      }
+                    >
+                      {turn.text}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </Card>
       ) : null}
