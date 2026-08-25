@@ -1,4 +1,5 @@
 import { BrandImage } from "@/components/brand/BrandImage";
+import { ResumeTrainingButton } from "@/components/landing/ResumeTrainingButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -66,6 +67,7 @@ export default function HomePage() {
               <Button asChild size="lg">
                 <Link href="/consent">훈련 시작하기</Link>
               </Button>
+              <ResumeTrainingButton />
             </div>
           </div>
           <div className="hidden w-[280px] shrink-0 justify-end min-[576px]:flex lg:w-[320px]">
