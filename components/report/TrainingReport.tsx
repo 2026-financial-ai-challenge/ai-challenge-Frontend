@@ -1,5 +1,5 @@
 import { BrandImage } from "@/components/brand/BrandImage";
-import { ScoreBar } from "@/components/report/ScoreBar";
+import { ScoreGauge } from "@/components/report/ScoreGauge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { CallReport, ReportBehavior, ReportTurn } from "@/lib/types";
@@ -68,8 +68,8 @@ export function TrainingReport({ status, body, turns }: TrainingReportProps) {
       ) : null}
 
       <Card className="p-5">
-        <ScoreBar score={body.score} label="시뮬레이션 상황 대응 점수" />
-        <p className="mt-3 text-xs leading-5 text-navy-400">
+        <ScoreGauge score={body.score} />
+        <p className="mx-auto mt-4 max-w-md text-center text-xs leading-5 text-navy-400">
           기본 60점에서 감지된 방어 행동은 더하고, 위험 행동은 차감해 계산한 점수입니다.
         </p>
       </Card>
