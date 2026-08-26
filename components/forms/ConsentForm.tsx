@@ -11,6 +11,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useEffect } from "react";
 
 const consentSchema = z.object({
   privacy: z.boolean().refine((value) => value === true, {
@@ -27,6 +29,12 @@ export function ConsentForm() {
   const router = useRouter();
   const setSessionId = useSessionStore((state) => state.setSessionId);
   const consentMutation = useSubmitConsentMutation();
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+
+  useEffect(() => {
+    if (hasHydrated && !accessToken) router.replace("/login");
+  }, [accessToken, hasHydrated, router]);
 
   const {
     control,
@@ -47,7 +55,7 @@ export function ConsentForm() {
         unannouncedTraining: values.unannouncedTraining,
       });
       setSessionId(sessionId);
-      router.push("/register");
+      router.push(`/status/${sessionId}`);
     } catch {
       // error is read from mutation state
     }
@@ -59,6 +67,8 @@ export function ConsentForm() {
       ? "동의 저장에 실패했습니다. 잠시 후 다시 시도해 주세요."
       : undefined,
   );
+
+  if (!hasHydrated || !accessToken) return <p className="text-sm text-muted-foreground">로그인 정보를 확인하고 있습니다...</p>;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

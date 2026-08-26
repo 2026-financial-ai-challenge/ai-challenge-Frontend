@@ -65,9 +65,10 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
-                <Link href="/consent">훈련 시작하기</Link>
+                <Link href="/login">로그인하고 훈련 시작</Link>
               </Button>
               <ResumeTrainingButton />
+              <Button asChild size="lg" variant="secondary"><Link href="/register">회원가입</Link></Button>
             </div>
           </div>
           <div className="hidden w-[280px] shrink-0 justify-end min-[576px]:flex lg:w-[320px]">

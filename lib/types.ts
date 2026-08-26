@@ -78,6 +78,25 @@ export interface SubmitConsentResponse {
   sessionId: string;
 }
 
+export interface SignupOtpResponse {
+  phoneNumberMasked: string;
+  expiresInSec: number;
+  resendAvailableInSec: number;
+  devCode?: string | null;
+}
+
+export interface VerificationTokenResponse {
+  verificationToken: string;
+  expiresInSec: number;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  tokenType: "bearer";
+  expiresInSec: number;
+  participant: { id: number; phoneNumberMasked: string };
+}
+
 export interface RequestOtpRequest {
   sessionId: string;
   phoneNumber: string;

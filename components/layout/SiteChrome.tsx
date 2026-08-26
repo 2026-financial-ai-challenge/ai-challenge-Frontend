@@ -15,7 +15,7 @@ export function SiteHeader() {
           />
         </Link>
         <Button asChild size="sm">
-          <Link href="/consent">훈련 시작</Link>
+          <Link href="/login">로그인</Link>
         </Button>
       </div>
     </header>
