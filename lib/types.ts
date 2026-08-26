@@ -1,5 +1,5 @@
 /** 서버가 알려주는 통화 상태. 웹에는 통화 UI를 두지 않는다. */
-export type CallStatus = "waiting" | "calling" | "completed";
+export type CallStatus = "waiting" | "calling" | "completed" | "missed" | "failed";
 
 /** 통화 종료 후 리포트 생성 단계. 통화 전이면 null 또는 none. */
 export type ReportStatus = "none" | "pending" | "draft" | "final" | "failed";
@@ -145,4 +145,52 @@ export function isReportReady(
 
 export interface GetComparisonResponse {
   result: ComparisonResult;
+}
+
+export interface StartCallResponse {
+  callId?: string | null;
+  status: "waiting" | "calling";
+}
+
+export interface AuthParticipant {
+  id: number;
+  phoneNumberMasked: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  tokenType: string;
+  expiresInSec: number;
+  participant: AuthParticipant;
+}
+
+export interface RequestSignupOtpRequest {
+  phoneNumber: string;
+}
+
+export interface RequestSignupOtpResponse {
+  phoneNumberMasked: string;
+  expiresInSec: number;
+  resendAvailableInSec: number;
+  devCode?: string | null;
+}
+
+export interface VerifySignupOtpRequest {
+  phoneNumber: string;
+  code: string;
+}
+
+export interface VerifySignupOtpResponse {
+  verificationToken: string;
+  expiresInSec: number;
+}
+
+export interface SignupRequest {
+  verificationToken: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  phoneNumber: string;
+  password: string;
 }

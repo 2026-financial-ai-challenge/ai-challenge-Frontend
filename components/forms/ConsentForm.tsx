@@ -5,10 +5,12 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
-import { apiErrorMessage } from "@/lib/errors";
+import { ApiError, apiErrorMessage } from "@/lib/errors";
+import { hasLocalConsent, replaceTo, useAuthStore } from "@/lib/stores/auth-store";
 import { useSessionStore } from "@/lib/stores/session-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -26,7 +28,19 @@ type ConsentFormValues = z.infer<typeof consentSchema>;
 export function ConsentForm() {
   const router = useRouter();
   const setSessionId = useSessionStore((state) => state.setSessionId);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const token = useAuthStore((state) => state.token);
+  const alreadyConsented = useAuthStore(hasLocalConsent);
+  const markConsented = useAuthStore((state) => state.markConsented);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const consentMutation = useSubmitConsentMutation();
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!token) {
+      replaceTo("/login?next=/consent");
+    }
+  }, [hasHydrated, token]);
 
   const {
     control,
@@ -47,9 +61,13 @@ export function ConsentForm() {
         unannouncedTraining: values.unannouncedTraining,
       });
       setSessionId(sessionId);
-      router.push("/register");
-    } catch {
-      // error is read from mutation state
+      markConsented();
+      router.push(`/status/${sessionId}`);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        clearAuth();
+        replaceTo("/login?next=/consent");
+      }
     }
   };
 
@@ -60,15 +78,46 @@ export function ConsentForm() {
       : undefined,
   );
 
+  if (!hasHydrated || !token) {
+    return (
+      <p className="text-sm text-text-secondary">로그인 상태를 확인하고 있습니다...</p>
+    );
+  }
+
+  if (alreadyConsented) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm leading-6 text-text-primary">
+          이미 동의하셨습니다. 바로 다음 훈련을 시작할 수 있습니다.
+        </p>
+        {submitError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {submitError}
+          </p>
+        ) : null}
+        <Button
+          type="button"
+          className="w-full"
+          disabled={consentMutation.isPending}
+          onClick={() =>
+            void onSubmit({ privacy: true, unannouncedTraining: true })
+          }
+        >
+          {consentMutation.isPending ? "훈련 준비 중..." : "훈련 시작하기"}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <Card className="p-5">
         <fieldset>
-          <legend className="px-1 text-sm font-semibold text-navy-900">
+          <legend className="px-1 text-sm font-semibold text-text-primary">
             개인정보 수집·이용 동의
             <span className="ml-1.5 font-medium text-destructive">필수</span>
           </legend>
-          <div className="mt-3 space-y-2 text-sm leading-6 text-navy-600">
+          <div className="mt-3 space-y-2 text-sm leading-6 text-text-primary">
             <p>
               훈련 전화를 걸기 위해 휴대전화번호만 수집합니다. 이름, 주민등록번호,
               계좌번호 등 다른 개인정보는 받지 않습니다.
@@ -95,7 +144,7 @@ export function ConsentForm() {
                 />
                 <Label
                   htmlFor="privacy"
-                  className="cursor-pointer leading-5 text-navy-800"
+                  className="cursor-pointer leading-5 text-text-primary"
                 >
                   위 내용을 확인했으며, 개인정보 수집·이용에 동의합니다.
                 </Label>
@@ -112,11 +161,11 @@ export function ConsentForm() {
 
       <Card className="p-5">
         <fieldset>
-          <legend className="px-1 text-sm font-semibold text-navy-900">
+          <legend className="px-1 text-sm font-semibold text-text-primary">
             불시 보이스피싱 훈련 수신 동의
             <span className="ml-1.5 font-medium text-destructive">필수</span>
           </legend>
-          <div className="mt-3 space-y-2 text-sm leading-6 text-navy-600">
+          <div className="mt-3 space-y-2 text-sm leading-6 text-text-primary">
             <p>
               보이스피싱 시뮬레이션 이후, 별도의 사전 알림 없이 불시 보이스피싱
               훈련 전화가 한 차례 더 걸릴 수 있습니다. 발신 시점과 시간대는 훈련
@@ -145,7 +194,7 @@ export function ConsentForm() {
                 />
                 <Label
                   htmlFor="unannouncedTraining"
-                  className="cursor-pointer leading-5 text-navy-800"
+                  className="cursor-pointer leading-5 text-text-primary"
                 >
                   불시 보이스피싱 훈련 전화를 수신하는 데 동의합니다.
                 </Label>
@@ -167,7 +216,7 @@ export function ConsentForm() {
       ) : null}
 
       <Button type="submit" className="w-full" disabled={consentMutation.isPending}>
-        {consentMutation.isPending ? "저장 중..." : "동의하고 계속하기"}
+        {consentMutation.isPending ? "훈련 준비 중..." : "동의하고 훈련 시작"}
       </Button>
     </form>
   );

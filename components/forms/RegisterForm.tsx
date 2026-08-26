@@ -43,7 +43,7 @@ export function RegisterForm() {
 
   if (!hasHydrated || !sessionId) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-text-secondary">
         동의 정보를 확인하고 있습니다...
       </p>
     );

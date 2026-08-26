@@ -10,10 +10,14 @@ import {
 import { api } from "@/lib/api";
 import { isReportReady } from "@/lib/types";
 import type {
+  LoginRequest,
   ReportStatus,
   RequestOtpRequest,
+  RequestSignupOtpRequest,
+  SignupRequest,
   SubmitConsentRequest,
   VerifyPhoneRequest,
+  VerifySignupOtpRequest,
 } from "@/lib/types";
 
 export const queryKeys = {
@@ -47,6 +51,30 @@ export function useSubmitConsentMutation() {
   });
 }
 
+export function useRequestSignupOtpMutation() {
+  return useMutation({
+    mutationFn: (body: RequestSignupOtpRequest) => api.requestSignupOtp(body),
+  });
+}
+
+export function useVerifySignupOtpMutation() {
+  return useMutation({
+    mutationFn: (body: VerifySignupOtpRequest) => api.verifySignupOtp(body),
+  });
+}
+
+export function useSignupMutation() {
+  return useMutation({
+    mutationFn: (body: SignupRequest) => api.signup(body),
+  });
+}
+
+export function useLoginMutation() {
+  return useMutation({
+    mutationFn: (body: LoginRequest) => api.login(body),
+  });
+}
+
 export function useRequestPhoneOtpMutation() {
   return useMutation({
     mutationFn: (body: RequestOtpRequest) => api.requestPhoneOtp(body),
@@ -59,10 +87,17 @@ export function useVerifyPhoneMutation() {
   });
 }
 
+export function useStartCallMutation() {
+  return useMutation({
+    mutationFn: (sessionId: string) => api.startCall(sessionId),
+  });
+}
+
 export function useSessionQuery(sessionId: string | undefined) {
   const visible = useTabVisible();
   const queryClient = useQueryClient();
   const startedAtRef = useRef(Date.now());
+  const lastStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
     startedAtRef.current = Date.now();
@@ -88,13 +123,23 @@ export function useSessionQuery(sessionId: string | undefined) {
       const session = query.state.data?.session;
       if (!session?.callStatus) return false;
       if (
+        session.callStatus !== lastStatusRef.current &&
+        (session.callStatus === "waiting" || session.callStatus === "calling")
+      ) {
+        startedAtRef.current = Date.now();
+      }
+      lastStatusRef.current = session.callStatus;
+      if (session.callStatus === "missed" || session.callStatus === "failed") {
+        return false;
+      }
+      if (
         session.reportStatus === "draft" ||
         session.reportStatus === "final" ||
         session.reportStatus === "failed"
       ) {
         return false;
       }
-      if (Date.now() - startedAtRef.current > 120_000) return false;
+      if (Date.now() - startedAtRef.current > 180_000) return false;
       if (session.callStatus === "completed") {
         const updated = Date.parse(session.updatedAt);
         if (Number.isFinite(updated) && Date.now() - updated > 20_000) {
