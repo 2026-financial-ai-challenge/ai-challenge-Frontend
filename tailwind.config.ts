@@ -11,73 +11,56 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        background: {
+          DEFAULT: "#FFFFFF",
+          muted: "#FAFBFC",
+        },
+        foreground: "#252A34",
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#252A34",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#252A34",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#4E7FFF",
+          light: "#EAF1FF",
+          hover: "#3A6AEB",
+          foreground: "#FFFFFF",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "#EAF1FF",
+          foreground: "#252A34",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#FAFBFC",
+          foreground: "#8B94A3",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#EAF1FF",
+          foreground: "#252A34",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#D94F3D",
+          foreground: "#FFFFFF",
         },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        brand: {
-          50: "#EEF6FF",
-          100: "#D7EBFF",
-          200: "#B3D6FF",
-          300: "#7CBCFF",
-          400: "#4AA3FF",
-          500: "#2F86FF",
-          600: "#1B6DF0",
-          700: "#1558C7",
-          800: "#1449A0",
-          900: "#163A6B",
+        danger: {
+          DEFAULT: "#FF8B7B",
+          light: "#FFF1EF",
         },
-        navy: {
-          50: "#F3F7FC",
-          100: "#E6EEF8",
-          200: "#C9D9EE",
-          300: "#9BB6D8",
-          400: "#6B8DB8",
-          500: "#3D5F8A",
-          600: "#2B4A73",
-          700: "#1E3A6E",
-          800: "#16305C",
-          900: "#12284A",
-          950: "#0C1C36",
+        success: {
+          DEFAULT: "#7FE0C4",
+          light: "#E8F9F4",
         },
-        alert: {
-          DEFAULT: "#FF4D4D",
-          50: "#FFF1F1",
-          600: "#E03D3D",
+        text: {
+          primary: "#252A34",
+          secondary: "#8B94A3",
         },
-        sun: {
-          DEFAULT: "#FFD34D",
-          400: "#FFC107",
-        },
+        border: "#E4EAF4",
+        input: "#E4EAF4",
+        ring: "#4E7FFF",
       },
       fontFamily: {
         sans: [
@@ -89,8 +72,8 @@ const config: Config = {
         ],
       },
       boxShadow: {
-        card: "0 10px 30px rgba(22, 58, 107, 0.08)",
-        btn: "0 8px 18px rgba(47, 134, 255, 0.28)",
+        card: "0 10px 30px rgba(37, 42, 52, 0.06)",
+        btn: "0 8px 18px rgba(78, 127, 255, 0.28)",
       },
       borderRadius: {
         lg: "var(--radius)",

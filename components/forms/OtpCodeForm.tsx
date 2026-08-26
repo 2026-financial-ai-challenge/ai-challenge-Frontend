@@ -1,16 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { OTP_ERROR, formatMoNumber, smsDeepLink } from "@/lib/otp";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { OTP_ERROR } from "@/lib/otp";
+import { useEffect, useState } from "react";
 
-type OtpFormProps = {
+type OtpCodeFormProps = {
   phoneNumberMasked: string;
-  code: string;
-  sendToNumber: string;
   expiresAt: number;
   resendAt: number;
-  onConfirm: () => Promise<void> | void;
+  onConfirm: (code: string) => Promise<void> | void;
   onResend: () => Promise<void> | void;
   onChangePhone: () => void;
   isSubmitting?: boolean;
@@ -25,10 +25,8 @@ function formatMmSs(totalSec: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export function OtpForm({
+export function OtpCodeForm({
   phoneNumberMasked,
-  code,
-  sendToNumber,
   expiresAt,
   resendAt,
   onConfirm,
@@ -38,15 +36,9 @@ export function OtpForm({
   isResending = false,
   errorMessage,
   errorCode,
-}: OtpFormProps) {
+}: OtpCodeFormProps) {
   const [now, setNow] = useState(() => Date.now());
-  const isIos = useSyncExternalStore(
-    () => () => {},
-    () => /iPhone|iPad|iPod/i.test(navigator.userAgent),
-    () => false,
-  );
-  const smsHref = smsDeepLink(sendToNumber ?? "", code ?? "", isIos);
-  const [copied, setCopied] = useState(false);
+  const [code, setCode] = useState("");
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -59,71 +51,60 @@ export function OtpForm({
   const locked = errorCode === OTP_ERROR.OTP_LOCKED;
   const notRequested = errorCode === OTP_ERROR.OTP_NOT_REQUESTED;
   const rateLimited = errorCode === OTP_ERROR.OTP_RATE_LIMITED;
-  const confirmBlocked = expired || locked || notRequested;
+  const confirmBlocked = expired || locked || notRequested || code.length !== 6;
   const resendBlocked = isResending || resendInSec > 0 || rateLimited;
-  const sendToDisplay = formatMoNumber(sendToNumber ?? "");
-
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  };
 
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
         if (confirmBlocked || isSubmitting) return;
-        void onConfirm();
+        void onConfirm(code);
       }}
       className="space-y-4"
     >
       <div>
         <p className="text-sm leading-6 text-text-primary">
-          <span className="font-semibold text-text-primary">{phoneNumberMasked}</span>{" "}
-          번호 확인입니다. 지금 보내는 문자는 훈련 전화가 아닙니다.
+          <span className="font-semibold text-text-primary">
+            {phoneNumberMasked}로
+          </span>{" "}
+          인증번호를 보냈습니다.
         </p>
         <p className="mt-1 text-sm text-text-secondary">
-          아래 인증코드를 {sendToDisplay}로 보낸 다음, 전송 완료를 눌러 주세요.
+          문자에 있는 6자리 번호를 입력해 주세요. 지금 오는 문자는 훈련 전화가
+          아닙니다.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-primary-light bg-primary-light px-4 py-4">
+      <div>
         <div className="flex items-end justify-between gap-3">
-          <p className="text-xs font-medium text-text-secondary">보낼 번호</p>
+          <Label htmlFor="otpCode" className="text-text-primary">
+            인증번호
+          </Label>
           <p
             className={`text-xs font-medium ${expired ? "text-destructive" : "text-text-secondary"}`}
             aria-live="polite"
           >
             {expired
-              ? "인증코드가 만료되었습니다. 새 코드를 받아 주세요."
+              ? "인증번호가 만료되었습니다. 새 번호를 받아 주세요."
               : `남은 시간 ${formatMmSs(expiresInSec)}`}
           </p>
         </div>
-        <p className="mt-1 text-xl font-semibold tracking-wide text-text-primary">
-          {sendToDisplay}
-        </p>
-        <p className="mt-4 text-xs font-medium text-text-secondary">인증코드</p>
-        <p className="mt-1 text-center text-3xl font-bold tracking-[0.35em] text-text-primary">
-          {code}
-        </p>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <Button asChild variant="secondary" className="w-full">
-            <a href={smsHref}>문자 앱 열기</a>
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full"
-            onClick={() => void handleCopyCode()}
-          >
-            {copied ? "코드를 복사했습니다" : "코드 복사"}
-          </Button>
-        </div>
+        <Input
+          id="otpCode"
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          autoFocus
+          maxLength={6}
+          placeholder="000000"
+          className="mt-3 text-center text-2xl font-bold tracking-[0.35em]"
+          value={code}
+          onChange={(event) =>
+            setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+          }
+          aria-invalid={errorMessage ? "true" : "false"}
+        />
       </div>
 
       {errorMessage ? (
@@ -137,7 +118,7 @@ export function OtpForm({
         className="w-full"
         disabled={isSubmitting || confirmBlocked}
       >
-        {isSubmitting ? "번호 확인 중..." : "전송 완료"}
+        {isSubmitting ? "확인 중..." : "인증하기"}
       </Button>
 
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -149,17 +130,12 @@ export function OtpForm({
           onClick={() => void onResend()}
         >
           {isResending
-            ? "새 코드 받는 중..."
+            ? "새 번호 보내는 중..."
             : resendInSec > 0
-              ? `${resendInSec}초 후 새 코드`
-              : "새 코드 받기"}
+              ? `${resendInSec}초 후 다시 받기`
+              : "다시 받기"}
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className="w-full"
-          onClick={onChangePhone}
-        >
+        <Button type="button" variant="ghost" className="w-full" onClick={onChangePhone}>
           번호 변경
         </Button>
       </div>

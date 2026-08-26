@@ -22,7 +22,7 @@ export function ResumeTrainingButton() {
       .then(({ session }) => {
         if (cancelled) return;
         setResumePath(
-          session.phoneNumberMasked ? `/status/${session.id}` : "/register",
+          session.phoneNumberMasked ? `/status/${session.id}` : "/consent",
         );
       })
       .catch(() => {

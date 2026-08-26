@@ -28,11 +28,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body
-        className={`${notoSansKr.variable} bg-background font-sans text-foreground antialiased`}
+        className={`${notoSansKr.variable} bg-background-muted font-sans text-text-primary antialiased`}
       >
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-3 focus:py-2 focus:text-sm"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:text-text-primary"
         >
           본문으로 건너뛰기
         </a>

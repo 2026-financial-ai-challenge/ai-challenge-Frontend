@@ -1,20 +1,29 @@
 import { ApiError } from "@/lib/errors";
+import { getAuthToken } from "@/lib/stores/auth-store";
 import type {
+  AuthResponse,
   BehaviorItem,
   CallReport,
   ComparisonResult,
   GetComparisonResponse,
   GetReportResponse,
   GetSessionResponse,
+  LoginRequest,
   ReportTurn,
   RequestOtpRequest,
   RequestOtpResponse,
+  RequestSignupOtpRequest,
+  RequestSignupOtpResponse,
   Session,
+  SignupRequest,
+  StartCallResponse,
   SubmitConsentRequest,
   SubmitConsentResponse,
   TrainingResult,
   VerifyPhoneRequest,
   VerifyPhoneResponse,
+  VerifySignupOtpRequest,
+  VerifySignupOtpResponse,
 } from "@/lib/types";
 
 const DELAY_MS = 450;
@@ -32,6 +41,18 @@ type PendingOtp = {
   resendAvailableAtMs: number;
   attempts: number;
   sendCount: number;
+  password?: string;
+  verificationToken?: string;
+  tokenExpiresAtMs?: number;
+  tokenUsed?: boolean;
+};
+
+type MockAccount = {
+  id: number;
+  phoneNumber: string;
+  phoneNumberMasked: string;
+  password: string;
+  consented: boolean;
 };
 
 type MockStore = {
@@ -40,6 +61,9 @@ type MockStore = {
   unannounced: Record<string, TrainingResult>;
   reports: Record<string, GetReportResponse>;
   otps: Record<string, PendingOtp>;
+  accounts: Record<string, MockAccount>;
+  tokens: Record<string, number>;
+  nextAccountId: number;
 };
 
 function nowIso() {
@@ -261,6 +285,9 @@ function seedStore(): MockStore {
       },
     },
     otps: {},
+    accounts: {},
+    tokens: {},
+    nextAccountId: 1,
   };
 }
 
@@ -297,6 +324,9 @@ function getStore(): MockStore {
           unannounced: { ...seeded.unannounced, ...stored.unannounced },
           reports: { ...seeded.reports, ...(stored.reports ?? {}) },
           otps: { ...seeded.otps, ...(stored.otps ?? {}) },
+          accounts: { ...seeded.accounts, ...(stored.accounts ?? {}) },
+          tokens: { ...seeded.tokens, ...(stored.tokens ?? {}) },
+          nextAccountId: stored.nextAccountId ?? seeded.nextAccountId,
         }
       : seeded;
   }
@@ -311,7 +341,230 @@ function requireSession(sessionId: string): Session {
   return session;
 }
 
+function requireAccountByToken(): MockAccount {
+  const token = getAuthToken();
+  if (!token) {
+    throw new ApiError("로그인이 필요합니다.", 401, "AUTH_REQUIRED");
+  }
+  const store = getStore();
+  const accountId = store.tokens[token];
+  const account = Object.values(store.accounts).find((item) => item.id === accountId);
+  if (!account) {
+    throw new ApiError("로그인이 필요합니다.", 401, "AUTH_REQUIRED");
+  }
+  return account;
+}
+
+function issueMockToken(account: MockAccount): AuthResponse {
+  const token = createId("tok");
+  const store = getStore();
+  store.tokens[token] = account.id;
+  persistStore(store);
+  return {
+    accessToken: token,
+    tokenType: "bearer",
+    expiresInSec: 3600,
+    participant: {
+      id: account.id,
+      phoneNumberMasked: account.phoneNumberMasked,
+    },
+  };
+}
+
+function validateMockPassword(password: string) {
+  if (
+    password.length < 8 ||
+    password.length > 128 ||
+    !/[A-Za-z]/.test(password) ||
+    !/\d/.test(password)
+  ) {
+    throw new ApiError(
+      "비밀번호는 영문과 숫자를 포함해 8자 이상이어야 합니다.",
+      400,
+      "WEAK_PASSWORD",
+    );
+  }
+}
+
+function signupOtpKey(phoneDigits: string) {
+  return `signup:${phoneDigits}`;
+}
+
 export const mockApi = {
+  async requestSignupOtp(
+    body: RequestSignupOtpRequest,
+  ): Promise<RequestSignupOtpResponse> {
+    await wait();
+    const digits = body.phoneNumber.replace(/\D/g, "");
+    if (!/^010\d{8}$/.test(digits)) {
+      throw new ApiError(
+        "010으로 시작하는 휴대전화번호 11자리를 입력해 주세요.",
+        400,
+        "INVALID_PHONE",
+      );
+    }
+
+    const store = getStore();
+    if (store.accounts[digits]) {
+      throw new ApiError(
+        "이미 가입된 전화번호입니다.",
+        409,
+        "PHONE_ALREADY_REGISTERED",
+      );
+    }
+
+    const key = signupOtpKey(digits);
+    const existing = store.otps[key];
+    const now = Date.now();
+    if (existing && now < existing.resendAvailableAtMs) {
+      throw new ApiError(
+        "인증번호는 60초 후 다시 요청할 수 있습니다.",
+        429,
+        "OTP_COOLDOWN",
+      );
+    }
+
+    store.otps[key] = {
+      phoneDigits: digits,
+      code: MOCK_OTP_CODE,
+      expiresAtMs: now + OTP_EXPIRES_IN_SEC * 1000,
+      resendAvailableAtMs: now + OTP_RESEND_COOLDOWN_SEC * 1000,
+      attempts: 0,
+      sendCount: 1,
+    };
+    persistStore(store);
+
+    return {
+      phoneNumberMasked: maskPhoneNumber(digits),
+      expiresInSec: OTP_EXPIRES_IN_SEC,
+      resendAvailableInSec: OTP_RESEND_COOLDOWN_SEC,
+      devCode: MOCK_OTP_CODE,
+    };
+  },
+
+  async verifySignupOtp(
+    body: VerifySignupOtpRequest,
+  ): Promise<VerifySignupOtpResponse> {
+    await wait();
+    const digits = body.phoneNumber.replace(/\D/g, "");
+    const store = getStore();
+    const pending = store.otps[signupOtpKey(digits)];
+    if (!pending) {
+      throw new ApiError(
+        "인증번호를 먼저 요청해 주세요.",
+        400,
+        "OTP_NOT_REQUESTED",
+      );
+    }
+    if (pending.verificationToken) {
+      throw new ApiError(
+        "이미 사용된 인증번호입니다.",
+        400,
+        "OTP_ALREADY_USED",
+      );
+    }
+    if (Date.now() > pending.expiresAtMs) {
+      throw new ApiError(
+        "인증번호가 만료되었습니다.",
+        400,
+        "OTP_EXPIRED",
+      );
+    }
+    if (pending.attempts >= OTP_MAX_ATTEMPTS) {
+      throw new ApiError(
+        "인증 시도 횟수를 초과했습니다.",
+        429,
+        "OTP_LOCKED",
+      );
+    }
+    if (pending.code !== body.code.replace(/\D/g, "")) {
+      pending.attempts += 1;
+      persistStore(store);
+      if (pending.attempts >= OTP_MAX_ATTEMPTS) {
+        throw new ApiError(
+          "인증 시도 횟수를 초과했습니다.",
+          429,
+          "OTP_LOCKED",
+        );
+      }
+      throw new ApiError(
+        `인증번호가 올바르지 않습니다. (${OTP_MAX_ATTEMPTS - pending.attempts}회 남음)`,
+        400,
+        "OTP_INVALID",
+      );
+    }
+
+    const verificationToken = createId("vfy");
+    pending.verificationToken = verificationToken;
+    pending.tokenExpiresAtMs = Date.now() + 600_000;
+    persistStore(store);
+    return { verificationToken, expiresInSec: 600 };
+  },
+
+  async signup(body: SignupRequest): Promise<AuthResponse> {
+    await wait();
+    validateMockPassword(body.password);
+    const store = getStore();
+    const pending = Object.values(store.otps).find(
+      (item) => item.verificationToken === body.verificationToken,
+    );
+    if (!pending || !pending.verificationToken) {
+      throw new ApiError(
+        "유효하지 않은 인증 토큰입니다.",
+        400,
+        "INVALID_VERIFICATION_TOKEN",
+      );
+    }
+    if (pending.tokenUsed) {
+      throw new ApiError(
+        "이미 사용된 인증 토큰입니다.",
+        400,
+        "VERIFICATION_TOKEN_USED",
+      );
+    }
+    if (!pending.tokenExpiresAtMs || Date.now() > pending.tokenExpiresAtMs) {
+      throw new ApiError(
+        "인증 토큰이 만료되었습니다.",
+        400,
+        "VERIFICATION_TOKEN_EXPIRED",
+      );
+    }
+    if (store.accounts[pending.phoneDigits]) {
+      throw new ApiError(
+        "이미 가입된 전화번호입니다.",
+        409,
+        "PHONE_ALREADY_REGISTERED",
+      );
+    }
+
+    const account: MockAccount = {
+      id: store.nextAccountId,
+      phoneNumber: pending.phoneDigits,
+      phoneNumberMasked: maskPhoneNumber(pending.phoneDigits),
+      password: body.password,
+      consented: false,
+    };
+    store.nextAccountId += 1;
+    store.accounts[pending.phoneDigits] = account;
+    pending.tokenUsed = true;
+    persistStore(store);
+    return issueMockToken(account);
+  },
+
+  async login(body: LoginRequest): Promise<AuthResponse> {
+    await wait();
+    const digits = body.phoneNumber.replace(/\D/g, "");
+    const account = getStore().accounts[digits];
+    if (!account || account.password !== body.password) {
+      throw new ApiError(
+        "전화번호 또는 비밀번호가 올바르지 않습니다.",
+        401,
+        "INVALID_CREDENTIALS",
+      );
+    }
+    return issueMockToken(account);
+  },
+
   async submitConsent(body: SubmitConsentRequest): Promise<SubmitConsentResponse> {
     await wait();
 
@@ -324,10 +577,13 @@ export const mockApi = {
     }
 
     const timestamp = nowIso();
+    const account = requireAccountByToken();
+    account.consented = true;
+
     const session: Session = {
       id: createId("ses"),
-      phoneNumberMasked: null,
-      callStatus: null,
+      phoneNumberMasked: account.phoneNumberMasked,
+      callStatus: "waiting",
       callId: null,
       reportStatus: null,
       currentTrainingType: "announced",
@@ -482,6 +738,30 @@ export const mockApi = {
     delete store.otps[sessionId];
     persistStore(store);
     return { session: updated };
+  },
+
+  async startCall(sessionId: string): Promise<StartCallResponse> {
+    await wait();
+    const session = requireSession(sessionId);
+    if (session.callStatus === "calling") {
+      throw new ApiError(
+        "이미 훈련 전화를 걸고 있습니다. 잠시만 기다려 주세요.",
+        409,
+        "CALL_IN_PROGRESS",
+      );
+    }
+    const timestamp = nowIso();
+    const callId = createId("CA");
+    const store = getStore();
+    store.sessions[sessionId] = {
+      ...session,
+      callStatus: "calling",
+      callId,
+      reportStatus: "pending",
+      updatedAt: timestamp,
+    };
+    persistStore(store);
+    return { callId, status: "calling" };
   },
 
   async getSession(sessionId: string): Promise<GetSessionResponse> {
