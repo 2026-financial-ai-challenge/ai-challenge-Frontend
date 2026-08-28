@@ -5,6 +5,7 @@ import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
 import { apiErrorMessage } from "@/lib/errors";
 import { hasLocalConsent, useAuthStore } from "@/lib/stores/auth-store";
 import { useSessionStore } from "@/lib/stores/session-store";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -12,11 +13,13 @@ import { useState } from "react";
 type StartTrainingActionProps = {
   size?: "sm" | "lg";
   label?: string;
+  className?: string;
 };
 
 export function StartTrainingAction({
   size = "lg",
   label = "훈련 시작하기",
+  className,
 }: StartTrainingActionProps) {
   const router = useRouter();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
@@ -28,12 +31,17 @@ export function StartTrainingAction({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!hasHydrated) {
-    return <div className={size === "sm" ? "h-9 w-20" : "h-11 w-32"} aria-hidden />;
+    return (
+      <div
+        className={cn(size === "sm" ? "h-9 w-20" : "h-11 w-32", className)}
+        aria-hidden
+      />
+    );
   }
 
   if (!token) {
     return (
-      <Button asChild size={size}>
+      <Button asChild size={size} className={className}>
         <Link href="/login?next=/consent">{label}</Link>
       </Button>
     );
@@ -41,7 +49,7 @@ export function StartTrainingAction({
 
   if (!alreadyConsented) {
     return (
-      <Button asChild size={size}>
+      <Button asChild size={size} className={className}>
         <Link href="/consent">{label}</Link>
       </Button>
     );
@@ -65,10 +73,11 @@ export function StartTrainingAction({
   };
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className={cn("flex flex-col items-start gap-2", className && "w-full")}>
       <Button
         type="button"
         size={size}
+        className={className}
         onClick={() => void handleStart()}
         disabled={startMutation.isPending}
       >

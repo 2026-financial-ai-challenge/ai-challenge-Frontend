@@ -54,6 +54,10 @@ const config: Config = {
           DEFAULT: "#7FE0C4",
           light: "#E8F9F4",
         },
+        caution: {
+          DEFAULT: "#F5B62E",
+          light: "#FFF8E8",
+        },
         text: {
           primary: "#252A34",
           secondary: "#8B94A3",
