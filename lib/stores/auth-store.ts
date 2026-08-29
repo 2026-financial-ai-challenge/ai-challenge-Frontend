@@ -108,7 +108,7 @@ export function hasLocalConsent(state: {
 
 export function safeNextPath(value: string | null | undefined): string {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/consent";
+    return "/dashboard";
   }
   return value;
 }

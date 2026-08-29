@@ -1,6 +1,5 @@
 "use client";
 
-import { StartTrainingAction } from "@/components/landing/StartTrainingButton";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import Link from "next/link";
@@ -34,7 +33,9 @@ export function AuthNav() {
         >
           로그아웃
         </Button>
-        <StartTrainingAction size="sm" label="훈련 시작" />
+        <Button asChild size="sm">
+          <Link href="/dashboard">대시보드</Link>
+        </Button>
       </div>
     );
   }

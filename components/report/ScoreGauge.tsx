@@ -1,14 +1,20 @@
 type ScoreGaugeProps = {
   score: number;
   label?: string;
+  /** "compact"는 보조 지표로 쓸 때(예: 리포트 하단 요약 스트립)의 한 줄짜리 표기. */
+  variant?: "full" | "compact";
 };
 
 const GAP = 1.5;
 const ZONES = [
-  { start: 0, end: 40, className: "text-danger" },
-  { start: 40, end: 80, className: "text-amber-400" },
-  { start: 80, end: 100, className: "text-success" },
+  { start: 0, end: 40, className: "text-danger", dot: "bg-danger" },
+  { start: 40, end: 80, className: "text-amber-400", dot: "bg-amber-400" },
+  { start: 80, end: 100, className: "text-success", dot: "bg-success" },
 ] as const;
+
+function zoneFor(score: number) {
+  return ZONES.find((zone) => score >= zone.start && score <= zone.end) ?? ZONES[ZONES.length - 1];
+}
 
 function zoneDash(start: number, end: number) {
   const from = start === 0 ? 0 : start + GAP;
@@ -30,11 +36,30 @@ function scoreStatus(score: number) {
 export function ScoreGauge({
   score,
   label = "시뮬레이션 상황 대응 점수",
+  variant = "full",
 }: ScoreGaugeProps) {
   const clamped = Math.min(100, Math.max(0, score));
   const needleAngle = -90 + clamped * 1.8;
   const status = scoreStatus(clamped);
   const arc = "M 20 100 A 80 80 0 0 1 180 100";
+
+  if (variant === "compact") {
+    return (
+      <p
+        className="inline-flex items-center gap-1.5 text-sm text-text-primary"
+        role="meter"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={clamped}
+        aria-valuetext={`${clamped}점, ${status.label}`}
+      >
+        <span className={`h-2 w-2 rounded-full ${zoneFor(clamped).dot}`} aria-hidden />
+        <span className="font-semibold tabular-nums">{clamped}점</span>
+        <span className="text-text-secondary">· {status.label}</span>
+      </p>
+    );
+  }
 
   return (
     <div

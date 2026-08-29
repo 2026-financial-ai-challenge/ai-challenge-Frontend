@@ -45,7 +45,7 @@ export function SignupForm() {
 
   useEffect(() => {
     if (hasHydrated && token) {
-      replaceTo(alreadyConsented ? "/" : "/consent");
+      replaceTo(alreadyConsented ? "/dashboard" : "/consent");
     }
   }, [alreadyConsented, hasHydrated, token]);
 
