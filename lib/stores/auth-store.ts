@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
         consentedParticipantIds: state.consentedParticipantIds,
       }),
       merge: (persistedState, currentState) => {
-        const persisted = persistedState as {
+        const persisted = (persistedState ?? {}) as {
           token?: string | null;
           participant?: (AuthParticipant & { hasConsented?: boolean }) | null;
           consentedParticipantIds?: number[];
