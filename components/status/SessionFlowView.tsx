@@ -2,7 +2,7 @@
 
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { TrainingReport } from "@/components/report/TrainingReport";
+import { ReportCollection } from "@/components/report/ReportCollection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ApiError, apiErrorMessage } from "@/lib/errors";
@@ -37,6 +37,10 @@ const callCopy: Record<
   missed: {
     title: "전화를 받지 못했습니다",
     body: "방해금지 모드이거나 전화를 거절·무응답하면 훈련이 진행되지 않습니다. 다시 시도해 주세요.",
+  },
+  silent: {
+    title: "통화 내용을 확인할 수 없습니다",
+    body: "전화는 연결됐지만 응답한 내용이 없어 리포트를 만들 수 없습니다. 다시 전화 걸기를 눌러 훈련을 진행해 주세요.",
   },
   failed: {
     title: "전화를 걸지 못했습니다",
@@ -114,7 +118,7 @@ export function SessionFlowView() {
     recordCompletedSession({
       id: sessionId,
       announcedScore: report.draft?.score ?? null,
-      unannouncedScore: report.final?.score ?? null,
+      unannouncedScore: report.unannounced?.score ?? report.final?.score ?? null,
       completedAt: new Date().toISOString(),
     });
   }, [reportStatus, report, sessionId, recordCompletedSession]);
@@ -181,8 +185,7 @@ export function SessionFlowView() {
   }
 
   if (isReportReady(reportStatus)) {
-    const body = report?.final ?? report?.draft;
-    const badgeStatus = report?.final ? "final" : "draft";
+    const body = report?.final ?? report?.unannounced ?? report?.draft;
 
     return (
       <div className="mx-auto max-w-xl px-5 py-12 sm:py-16">
@@ -193,10 +196,13 @@ export function SessionFlowView() {
               리포트를 불러오고 있습니다...
             </p>
           ) : (
-            <TrainingReport
-              status={badgeStatus}
-              body={body}
-              turns={report?.turns ?? []}
+            <ReportCollection
+              key={report?.status}
+              draft={report?.draft ?? null}
+              unannounced={report?.unannounced ?? null}
+              final={report?.final ?? null}
+              draftTurns={report?.draftTurns ?? report?.turns ?? []}
+              unannouncedTurns={report?.unannouncedTurns ?? report?.turns ?? []}
             />
           )}
           {errorMessage ? (
@@ -208,7 +214,10 @@ export function SessionFlowView() {
   }
 
   const copy = statusCardCopy(callStatus, reportStatus);
-  const canRetry = callStatus === "missed" || callStatus === "failed";
+  const canRetry =
+    callStatus === "missed" ||
+    callStatus === "silent" ||
+    callStatus === "failed";
   const retryError = apiErrorMessage(retryMutation.error);
 
   return (

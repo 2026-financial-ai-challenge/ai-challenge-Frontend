@@ -1,5 +1,11 @@
 /** 서버가 알려주는 통화 상태. 웹에는 통화 UI를 두지 않는다. */
-export type CallStatus = "waiting" | "calling" | "completed" | "missed" | "failed";
+export type CallStatus =
+  | "waiting"
+  | "calling"
+  | "completed"
+  | "missed"
+  | "silent"
+  | "failed";
 
 /** 통화 종료 후 리포트 생성 단계. 통화 전이면 null 또는 none. */
 export type ReportStatus = "none" | "pending" | "draft" | "final" | "failed";
@@ -132,7 +138,10 @@ export interface GetReportResponse {
   callId: string | null;
   status: ReportStatus;
   turns: ReportTurn[];
+  draftTurns?: ReportTurn[];
+  unannouncedTurns?: ReportTurn[];
   draft: CallReport | null;
+  unannounced?: CallReport | null;
   final: CallReport | null;
   clawopsSummary?: unknown;
 }

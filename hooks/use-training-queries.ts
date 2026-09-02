@@ -96,7 +96,7 @@ export function useStartCallMutation() {
 export function useSessionQuery(sessionId: string | undefined) {
   const visible = useTabVisible();
   const queryClient = useQueryClient();
-  const startedAtRef = useRef(Date.now());
+  const startedAtRef = useRef<number | null>(null);
   const lastStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -120,6 +120,9 @@ export function useSessionQuery(sessionId: string | undefined) {
     refetchOnReconnect: false,
     refetchIntervalInBackground: false,
     refetchInterval: (query) => {
+      if (startedAtRef.current === null) {
+        startedAtRef.current = Date.now();
+      }
       const session = query.state.data?.session;
       if (!session?.callStatus) return false;
       if (
@@ -129,7 +132,11 @@ export function useSessionQuery(sessionId: string | undefined) {
         startedAtRef.current = Date.now();
       }
       lastStatusRef.current = session.callStatus;
-      if (session.callStatus === "missed" || session.callStatus === "failed") {
+      if (
+        session.callStatus === "missed" ||
+        session.callStatus === "silent" ||
+        session.callStatus === "failed"
+      ) {
         return false;
       }
       if (
