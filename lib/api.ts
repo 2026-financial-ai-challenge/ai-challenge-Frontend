@@ -43,6 +43,7 @@ export interface ApiClient {
   verifyPhone(body: VerifyPhoneRequest): Promise<VerifyPhoneResponse>;
   startCall(sessionId: string): Promise<StartCallResponse>;
   getSession(sessionId: string): Promise<GetSessionResponse>;
+  getCurrentSession(): Promise<GetSessionResponse>;
   getReport(sessionId: string): Promise<GetReportResponse>;
   getComparisonResult(sessionId: string): Promise<GetComparisonResponse>;
 }
@@ -137,6 +138,9 @@ const liveApi: ApiClient = {
   },
   getSession(sessionId) {
     return request<GetSessionResponse>(`/v1/sessions/${sessionId}`);
+  },
+  getCurrentSession() {
+    return request<GetSessionResponse>("/v1/sessions/current");
   },
   startCall(sessionId) {
     return request<StartCallResponse>(`/v1/sessions/${sessionId}/calls`, {

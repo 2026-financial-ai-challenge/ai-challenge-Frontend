@@ -1,19 +1,11 @@
-import { BrandImage } from "@/components/brand/BrandImage";
 import { AuthNav } from "@/components/layout/AuthNav";
-import Link from "next/link";
+import { BrandHomeLink } from "@/components/layout/BrandHomeLink";
 
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-primary-light/80 bg-white/85 backdrop-blur">
       <div className="mx-auto flex h-[4.25rem] max-w-5xl items-center justify-between px-5">
-        <Link href="/" className="flex items-center gap-2">
-          <BrandImage
-            name="wordmark"
-            alt="안심피싱"
-            className="h-9 w-auto sm:h-10"
-            priority
-          />
-        </Link>
+        <BrandHomeLink />
         <AuthNav />
       </div>
     </header>
