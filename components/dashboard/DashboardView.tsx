@@ -38,6 +38,8 @@ function statusLabel(session: Session): string {
       return "통화 완료 · 리포트 준비 중";
     case "missed":
       return "전화를 받지 못함";
+    case "silent":
+      return "응답 내용 없음 · 다시 전화 필요";
     case "failed":
       return "발신 실패";
     default:
