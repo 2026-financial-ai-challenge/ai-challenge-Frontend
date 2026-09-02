@@ -769,6 +769,18 @@ export const mockApi = {
     return { session: requireSession(sessionId) };
   },
 
+  async getCurrentSession(): Promise<GetSessionResponse> {
+    await wait(200);
+    const sessions = Object.values(getStore().sessions);
+    const current = sessions
+      .filter((session) => session.reportStatus !== "final")
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    if (!current) {
+      throw new ApiError("진행 중인 세션이 없습니다.", 404, "SESSION_NOT_FOUND");
+    }
+    return { session: current };
+  },
+
   async getReport(sessionId: string): Promise<GetReportResponse> {
     await wait();
     requireSession(sessionId);
