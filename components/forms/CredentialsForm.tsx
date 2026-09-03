@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -103,9 +104,8 @@ export function CredentialsForm({
         <Label htmlFor="password" className="text-text-primary">
           비밀번호
         </Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete={passwordAutoComplete}
           placeholder="8자 이상"
           className="mt-3"
