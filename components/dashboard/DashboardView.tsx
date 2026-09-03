@@ -10,7 +10,6 @@ import { OTP_ERROR } from "@/lib/otp";
 import { replaceTo, useAuthStore } from "@/lib/stores/auth-store";
 import { useSessionStore, type CompletedRun } from "@/lib/stores/session-store";
 import type { Session } from "@/lib/types";
-import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useEffect, type ReactNode } from "react";
@@ -119,30 +118,6 @@ export function DashboardView() {
     reportStatus,
   );
   const draft = reportData?.draft ?? null;
-
-  useEffect(() => {
-    if (!ready || !token || sessionId) return;
-    let cancelled = false;
-    void api
-      .getCurrentSession()
-      .then((response) => {
-        if (!cancelled && response.session.id) {
-          setSessionId(response.session.id);
-        }
-      })
-      .catch((restoreError) => {
-        if (
-          restoreError instanceof ApiError &&
-          restoreError.status === 401
-        ) {
-          clearAuth();
-          replaceTo("/login?next=/dashboard");
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [ready, token, sessionId, setSessionId, clearAuth]);
 
   useEffect(() => {
     if (!error) return;
