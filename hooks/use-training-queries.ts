@@ -12,11 +12,9 @@ import { isReportReady } from "@/lib/types";
 import type {
   LoginRequest,
   ReportStatus,
-  RequestOtpRequest,
   RequestSignupOtpRequest,
   SignupRequest,
   SubmitConsentRequest,
-  VerifyPhoneRequest,
   VerifySignupOtpRequest,
 } from "@/lib/types";
 
@@ -24,7 +22,6 @@ export const queryKeys = {
   session: (sessionId: string) => ["session", sessionId] as const,
   report: (sessionId: string, reportStatus: ReportStatus | null) =>
     ["report", sessionId, reportStatus] as const,
-  result: (sessionId: string) => ["result", sessionId] as const,
 };
 
 function useTabVisible() {
@@ -72,18 +69,6 @@ export function useSignupMutation() {
 export function useLoginMutation() {
   return useMutation({
     mutationFn: (body: LoginRequest) => api.login(body),
-  });
-}
-
-export function useRequestPhoneOtpMutation() {
-  return useMutation({
-    mutationFn: (body: RequestOtpRequest) => api.requestPhoneOtp(body),
-  });
-}
-
-export function useVerifyPhoneMutation() {
-  return useMutation({
-    mutationFn: (body: VerifyPhoneRequest) => api.verifyPhone(body),
   });
 }
 
@@ -179,14 +164,5 @@ export function useReportQuery(
       if (!ready) return false;
       return 15_000;
     },
-  });
-}
-
-export function useComparisonResultQuery(sessionId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.result(sessionId ?? ""),
-    queryFn: () => api.getComparisonResult(sessionId!),
-    enabled: Boolean(sessionId),
-    retry: false,
   });
 }
