@@ -215,6 +215,7 @@ export function SessionFlowView() {
 
   const copy = statusCardCopy(callStatus, reportStatus);
   const canRetry =
+    callStatus === "waiting" ||
     callStatus === "missed" ||
     callStatus === "silent" ||
     callStatus === "failed";
