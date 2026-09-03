@@ -33,9 +33,6 @@ export function AuthNav() {
         >
           로그아웃
         </Button>
-        <Button asChild size="sm">
-          <Link href="/dashboard">대시보드</Link>
-        </Button>
       </div>
     );
   }
