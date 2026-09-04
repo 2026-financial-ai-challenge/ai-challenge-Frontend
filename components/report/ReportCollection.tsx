@@ -52,7 +52,7 @@ export function ReportCollection({
     <div>
       {available.length > 1 ? (
         <div
-          className="mb-8 grid gap-2 rounded-bubble border border-primary-light bg-card p-2 shadow-card sm:grid-cols-3"
+          className="mb-10 grid gap-2 rounded-bubble border border-primary-light bg-card p-2.5 shadow-card sm:grid-cols-3 lg:p-3"
           aria-label="리포트 선택"
         >
           {available.map((key) => (
@@ -60,7 +60,7 @@ export function ReportCollection({
               key={key}
               type="button"
               onClick={() => setSelected(key)}
-              className={`rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${
+              className={`rounded-full px-5 py-3 text-sm font-semibold transition-colors lg:text-base ${
                 active === key
                   ? "bg-primary text-white"
                   : "text-text-secondary hover:bg-primary-light"
