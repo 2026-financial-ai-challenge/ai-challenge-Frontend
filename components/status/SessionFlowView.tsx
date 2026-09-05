@@ -151,7 +151,7 @@ export function SessionFlowView() {
 
   if (errorMessage && !data && !report) {
     return (
-      <div className="mx-auto max-w-xl px-5 py-12 sm:py-16">
+      <div className="mx-auto max-w-2xl px-5 py-12 sm:py-16">
         {heading}
         <p className="mt-8 text-sm text-destructive" role="alert">
           {errorMessage}
@@ -162,7 +162,7 @@ export function SessionFlowView() {
 
   if (isLoading || !data) {
     return (
-      <div className="mx-auto max-w-xl px-5 py-12 sm:py-16">
+      <div className="mx-auto max-w-2xl px-5 py-12 sm:py-16">
         {heading}
         <p className="mt-8 text-sm text-text-secondary">
           상태를 확인하고 있습니다...
@@ -175,7 +175,7 @@ export function SessionFlowView() {
   const callStatus = session.callStatus;
   if (!session.phoneNumberMasked || !callStatus) {
     return (
-      <div className="mx-auto max-w-xl px-5 py-12 sm:py-16">
+      <div className="mx-auto max-w-2xl px-5 py-12 sm:py-16">
         {heading}
         <p className="mt-8 text-sm text-text-secondary">
           번호 인증 화면으로 이동하고 있습니다...
@@ -188,7 +188,7 @@ export function SessionFlowView() {
     const body = report?.final ?? report?.unannounced ?? report?.draft;
 
     return (
-      <div className="mx-auto max-w-xl px-5 py-12 sm:py-16">
+      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-7 sm:py-16 lg:px-8 lg:py-20">
         {heading}
         <div className="mt-8">
           {reportLoading || !body ? (
@@ -215,14 +215,13 @@ export function SessionFlowView() {
 
   const copy = statusCardCopy(callStatus, reportStatus);
   const canRetry =
-    callStatus === "waiting" ||
     callStatus === "missed" ||
     callStatus === "silent" ||
     callStatus === "failed";
   const retryError = apiErrorMessage(retryMutation.error);
 
   return (
-    <div className="mx-auto max-w-xl px-5 py-12 sm:py-16">
+    <div className="mx-auto max-w-2xl px-5 py-12 sm:py-16">
       {heading}
       <div className="mt-8">
         <Card className="p-6 text-center">

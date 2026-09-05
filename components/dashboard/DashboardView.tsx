@@ -159,8 +159,8 @@ export function DashboardView() {
   const inProgress = hasActive && (!session || session.reportStatus !== "final");
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
-      <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+    <div className="mx-auto max-w-5xl px-5 py-12 sm:px-7 sm:py-16 lg:px-8">
+      <h1 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
         내 훈련
       </h1>
       {participant ? (
@@ -170,7 +170,7 @@ export function DashboardView() {
       ) : null}
 
       {inProgress ? (
-        <Card className="mt-8 p-6">
+        <Card className="mt-8 p-6 sm:p-8 lg:p-10">
           {session ? (
             <>
               <TrainingProgress completed={completedSteps(session)} />
@@ -238,7 +238,7 @@ export function DashboardView() {
           )}
         </Card>
       ) : (
-        <Card className="mt-8 p-6">
+        <Card className="mt-8 p-6 sm:p-8 lg:p-10">
           <h2 className="text-base font-bold text-text-primary">
             {history.length > 0 ? "새 회차 시작" : "첫 훈련 시작"}
           </h2>
