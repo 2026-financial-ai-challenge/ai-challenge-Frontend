@@ -3,14 +3,17 @@
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function AuthNav() {
   const router = useRouter();
+  const pathname = usePathname();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const token = useAuthStore((state) => state.token);
   const participant = useAuthStore((state) => state.participant);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const onLoginPage = pathname === "/login";
+  const onSignupPage = pathname === "/signup";
 
   if (!hasHydrated) {
     return <div className="h-9 w-24" aria-hidden />;
@@ -33,21 +36,22 @@ export function AuthNav() {
         >
           로그아웃
         </Button>
-        <Button asChild size="sm">
-          <Link href="/dashboard">대시보드</Link>
-        </Button>
       </div>
     );
   }
 
   return (
     <div className="flex items-center gap-2">
-      <Button asChild size="sm" variant="ghost">
-        <Link href="/login">로그인</Link>
-      </Button>
-      <Button asChild size="sm">
-        <Link href="/signup">회원가입</Link>
-      </Button>
+      {onLoginPage ? null : (
+        <Button asChild size="sm" variant="ghost">
+          <Link href="/login">로그인</Link>
+        </Button>
+      )}
+      {onSignupPage ? null : (
+        <Button asChild size="sm">
+          <Link href="/signup">회원가입</Link>
+        </Button>
+      )}
     </div>
   );
 }

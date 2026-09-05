@@ -1,22 +1,16 @@
 import { ApiError } from "@/lib/errors";
-import { mockApi } from "@/lib/mock";
 import { getAuthToken } from "@/lib/stores/auth-store";
 import type {
   AuthResponse,
-  GetComparisonResponse,
   GetReportResponse,
   GetSessionResponse,
   LoginRequest,
-  RequestOtpRequest,
-  RequestOtpResponse,
   RequestSignupOtpRequest,
   RequestSignupOtpResponse,
   SignupRequest,
   StartCallResponse,
   SubmitConsentRequest,
   SubmitConsentResponse,
-  VerifyPhoneRequest,
-  VerifyPhoneResponse,
   VerifySignupOtpRequest,
   VerifySignupOtpResponse,
 } from "@/lib/types";
@@ -27,11 +21,9 @@ import type {
  * POST /v1/auth/signup
  * POST /v1/auth/login
  * POST /v1/consents  — Bearer 필수. 세션 생성 + 훈련 발신
- * POST /v1/sessions/:sessionId/phone/otp
- * POST /v1/sessions/:sessionId/phone/verify
+ * POST /v1/sessions/:sessionId/calls
  * GET  /v1/sessions/:sessionId
  * GET  /v1/sessions/:sessionId/report
- * GET  /v1/sessions/:sessionId/result
  */
 export interface ApiClient {
   requestSignupOtp(body: RequestSignupOtpRequest): Promise<RequestSignupOtpResponse>;
@@ -39,17 +31,13 @@ export interface ApiClient {
   signup(body: SignupRequest): Promise<AuthResponse>;
   login(body: LoginRequest): Promise<AuthResponse>;
   submitConsent(body: SubmitConsentRequest): Promise<SubmitConsentResponse>;
-  requestPhoneOtp(body: RequestOtpRequest): Promise<RequestOtpResponse>;
-  verifyPhone(body: VerifyPhoneRequest): Promise<VerifyPhoneResponse>;
   startCall(sessionId: string): Promise<StartCallResponse>;
   getSession(sessionId: string): Promise<GetSessionResponse>;
   getReport(sessionId: string): Promise<GetReportResponse>;
-  getComparisonResult(sessionId: string): Promise<GetComparisonResponse>;
 }
 
 export { ApiError } from "@/lib/errors";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 /** 브라우저는 same-origin `/v1`을 호출하고, Next rewrites가 백엔드로 넘긴다. */
 const BASE_URL = "";
 
@@ -117,24 +105,6 @@ const liveApi: ApiClient = {
       body: JSON.stringify(body),
     });
   },
-  requestPhoneOtp({ sessionId, phoneNumber }) {
-    return request<RequestOtpResponse>(
-      `/v1/sessions/${sessionId}/phone/otp`,
-      {
-        method: "POST",
-        body: JSON.stringify({ phoneNumber }),
-      },
-    );
-  },
-  verifyPhone({ sessionId, phoneNumber, code }) {
-    return request<VerifyPhoneResponse>(
-      `/v1/sessions/${sessionId}/phone/verify`,
-      {
-        method: "POST",
-        body: JSON.stringify({ phoneNumber, code }),
-      },
-    );
-  },
   getSession(sessionId) {
     return request<GetSessionResponse>(`/v1/sessions/${sessionId}`);
   },
@@ -147,9 +117,6 @@ const liveApi: ApiClient = {
   getReport(sessionId) {
     return request<GetReportResponse>(`/v1/sessions/${sessionId}/report`);
   },
-  getComparisonResult(sessionId) {
-    return request<GetComparisonResponse>(`/v1/sessions/${sessionId}/result`);
-  },
 };
 
-export const api: ApiClient = USE_MOCK ? mockApi : liveApi;
+export const api: ApiClient = liveApi;

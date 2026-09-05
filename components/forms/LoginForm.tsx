@@ -33,10 +33,8 @@ export function LoginForm() {
     }
   };
 
-  if (!hasHydrated || token) {
-    return (
-      <p className="text-sm text-text-secondary">로그인 상태를 확인하고 있습니다...</p>
-    );
+  if (hasHydrated && token) {
+    return null;
   }
 
   return (

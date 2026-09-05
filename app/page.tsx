@@ -1,3 +1,4 @@
+import { BrandImage } from "@/components/brand/BrandImage";
 import { RedirectIfAuthenticated } from "@/components/landing/RedirectIfAuthenticated";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,28 +61,13 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-xs">
-            <div className="rounded-lg bg-white p-6 shadow-card">
-              <Badge className="bg-primary-light text-primary">훈련 전화</Badge>
-              <p className="mt-4 text-xl font-semibold tracking-tight text-text-primary">
-                010 ●●●● ●●●●
-              </p>
-              <p className="mt-1 text-sm text-text-secondary">수신 중…</p>
-              <div
-                className="mt-6 flex items-center justify-between"
-                aria-hidden
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full border border-border text-sm text-text-secondary">
-                  거절
-                </span>
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm text-white">
-                  받기
-                </span>
-              </div>
-            </div>
-            <p className="mt-3 text-center text-xs leading-relaxed text-text-secondary">
-              실제로는 휴대전화로 전화가 걸려옵니다.
-            </p>
+          <div className="hidden lg:block">
+            <BrandImage
+              name="hero"
+              alt="보이스피싱 훈련 전화가 걸려온 휴대전화 화면"
+              className="h-auto w-full"
+              priority
+            />
           </div>
         </div>
       </section>

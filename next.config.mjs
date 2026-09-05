@@ -6,7 +6,6 @@ const backend = (
 const nextConfig = {
   agentRules: false,
   async rewrites() {
-    if (process.env.NEXT_PUBLIC_USE_MOCK !== "false") return [];
     return [
       {
         source: "/v1/:path*",

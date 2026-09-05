@@ -5,6 +5,8 @@ import { TrainingProgress } from "@/components/dashboard/TrainingProgress";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useReportQuery, useSessionQuery } from "@/hooks/use-training-queries";
+import { ApiError } from "@/lib/errors";
+import { OTP_ERROR } from "@/lib/otp";
 import { replaceTo, useAuthStore } from "@/lib/stores/auth-store";
 import { useSessionStore, type CompletedRun } from "@/lib/stores/session-store";
 import type { Session } from "@/lib/types";
@@ -89,6 +91,7 @@ export function DashboardView() {
   const authHydrated = useAuthStore((state) => state.hasHydrated);
   const token = useAuthStore((state) => state.token);
   const participant = useAuthStore((state) => state.participant);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const sessionHydrated = useSessionStore((state) => state.hasHydrated);
   const sessionId = useSessionStore((state) => state.sessionId);
@@ -117,8 +120,19 @@ export function DashboardView() {
   const draft = reportData?.draft ?? null;
 
   useEffect(() => {
-    if (error) setSessionId(null);
-  }, [error, setSessionId]);
+    if (!error) return;
+    if (error instanceof ApiError && error.status === 401) {
+      clearAuth();
+      replaceTo("/login?next=/dashboard");
+      return;
+    }
+    if (
+      error instanceof ApiError &&
+      (error.status === 404 || error.code === OTP_ERROR.SESSION_NOT_FOUND)
+    ) {
+      setSessionId(null);
+    }
+  }, [error, setSessionId, clearAuth]);
 
   useEffect(() => {
     if (session && session.reportStatus === "final") {

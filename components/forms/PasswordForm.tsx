@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -55,9 +55,8 @@ export function PasswordForm({
         <p className="mt-1 text-sm text-text-secondary">
           영문과 숫자를 포함해 8자 이상으로 입력해 주세요.
         </p>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="new-password"
           autoFocus
           placeholder="8자 이상, 영문+숫자"
