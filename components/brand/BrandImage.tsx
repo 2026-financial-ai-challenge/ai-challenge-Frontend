@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 const assets = {
-  hero: { src: "/brand/hero.png", width: 517, height: 514 },
+  hero: { src: "/brand/hero.png", width: 1156, height: 1361 },
   wordmark: { src: "/brand/logo-pill.png", width: 831, height: 206 },
   mascot: { src: "/brand/lockup.png", width: 264, height: 256 },
   shield: { src: "/brand/shield-check.png", width: 160, height: 176 },
@@ -29,6 +29,7 @@ export function BrandImage({ name, alt, className, priority }: BrandImageProps) 
       width={asset.width}
       height={asset.height}
       priority={priority}
+      loading={priority ? "eager" : "lazy"}
       className={`object-contain ${className ?? ""}`}
     />
   );

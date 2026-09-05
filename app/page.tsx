@@ -1,78 +1,71 @@
 import { BrandImage } from "@/components/brand/BrandImage";
+import { RedirectIfAuthenticated } from "@/components/landing/RedirectIfAuthenticated";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  BellRing,
-  ClipboardList,
-  GitCompareArrows,
-  PhoneCall,
-  type LucideIcon,
-} from "lucide-react";
 import Link from "next/link";
 
 const steps: {
   n: string;
   title: string;
   body: string;
-  icon: LucideIcon;
 }[] = [
   {
-    n: "01",
-    title: "보이스피싱 시뮬레이션",
-    body: "안내된 훈련 전화가 걸려옵니다. 실제 보이스피싱처럼 대응해 보면 됩니다. 통화는 휴대전화에서만 진행됩니다.",
-    icon: PhoneCall,
+    n: "1",
+    title: "훈련 전화",
+    body: "‘훈련 시작’을 누르면 안내된 보이스피싱 전화가 휴대전화로 걸려옵니다. 받아서 평소처럼 대응하면 됩니다.",
   },
   {
-    n: "02",
+    n: "2",
     title: "1차 리포트",
-    body: "시뮬레이션이 끝나면 대응 점수와 행동 분석을 확인합니다.",
-    icon: ClipboardList,
+    body: "통화가 끝나면 대응 점수와 행동 분석이 담긴 1차 리포트가 나옵니다.",
   },
   {
-    n: "03",
-    title: "불시 보이스피싱 훈련",
-    body: "이후 불시 보이스피싱 훈련 전화가 한 차례 더 옵니다. 발신 시점은 알려 드리지 않습니다.",
-    icon: BellRing,
+    n: "3",
+    title: "불시 전화",
+    body: "얼마 뒤, 시점을 알리지 않고 실전 훈련 전화가 한 차례 더 걸려옵니다.",
   },
   {
-    n: "04",
+    n: "4",
     title: "최종 리포트",
-    body: "보이스피싱 시뮬레이션과 불시 보이스피싱 훈련 결과를 비교해 실제 대응력을 확인합니다.",
-    icon: GitCompareArrows,
+    body: "두 통화를 비교해, 미리 아는 상황과 갑작스러운 상황의 대응력 차이를 확인합니다.",
   },
 ];
 
 export default function HomePage() {
   return (
     <>
-      <section className="relative overflow-hidden border-b border-brand-100 bg-gradient-to-b from-white to-brand-50">
-        <div className="mx-auto grid max-w-5xl items-center gap-8 px-5 py-12 sm:py-16 min-[576px]:grid-cols-[1fr_auto] lg:grid-cols-[1.1fr_0.9fr]">
+      <RedirectIfAuthenticated />
+
+      <section className="border-b border-primary-light bg-primary-light">
+        <div className="mx-auto grid max-w-5xl gap-10 px-5 py-14 sm:py-20 lg:grid-cols-2 lg:items-center lg:gap-12">
           <div className="min-w-0">
-            <div>
-              <Badge>AI 보이스피싱 실전 대응훈련</Badge>
-            </div>
-            <h1 className="mt-4 max-w-xl text-[1.85rem] font-bold leading-tight tracking-tight text-navy-900 sm:text-4xl">
-              위험한 전화,
+            <Badge className="bg-white text-text-primary">
+              AI 보이스피싱 실전 대응훈련
+            </Badge>
+            <h1 className="mt-4 max-w-md text-3xl font-bold leading-tight tracking-tight text-text-primary sm:text-4xl">
+              전화가 오면, 이미
               <br />
-              미리 연습하고 막아요
+              연습해 본 상황이 됩니다
             </h1>
-            <p className="mt-4 max-w-lg text-[15px] leading-7 text-navy-600">
-              안심피싱은 보이스피싱 시뮬레이션과 불시 보이스피싱 훈련을 같은
-              번호로 진행하고, 두 결과를 비교합니다. 미리 아는 상황과 갑작스러운
-              상황에서 반응이 얼마나 달라지는지 확인할 수 있습니다.
+            <p className="mt-4 max-w-md text-base leading-relaxed text-text-primary">
+              실제 번호로 훈련 전화가 걸려옵니다. 받아서 대응하고, 통화가 끝나면
+              어떻게 반응했는지 코칭 리포트를 받습니다.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center gap-4">
               <Button asChild size="lg">
-                <Link href="/consent">훈련 시작하기</Link>
+                <Link href="/signup">회원가입하고 시작하기</Link>
+              </Button>
+              <Button asChild variant="link" className="h-auto px-0 text-sm">
+                <Link href="/login">이미 계정이 있어요 →</Link>
               </Button>
             </div>
           </div>
-          <div className="hidden w-[280px] shrink-0 justify-end min-[576px]:flex lg:w-[320px]">
+
+          <div className="hidden lg:block">
             <BrandImage
               name="hero"
-              alt="안심피싱 마스코트"
-              className="h-auto w-full drop-shadow-xl"
+              alt="보이스피싱 훈련 전화가 걸려온 휴대전화 화면"
+              className="h-auto w-full"
               priority
             />
           </div>
@@ -80,31 +73,28 @@ export default function HomePage() {
       </section>
 
       <section id="how-it-works" className="mx-auto max-w-5xl px-5 py-16">
-        <h2 className="text-xl font-bold text-navy-900">진행 순서</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-navy-600">
-          보이스피싱 시뮬레이션으로 연습한 뒤, 불시 보이스피싱 훈련까지
-          이어집니다. 결과는 리포트로 확인하고, 통화 연결 화면은 제공하지
-          않습니다.
+        <h2 className="text-xl font-bold text-text-primary">진행 순서</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-primary">
+          안내된 훈련 전화 한 번, 예고 없는 실전 전화 한 번. 두 통화의 결과를
+          비교해 실제 대응력을 확인합니다.
         </p>
-        <ol className="mt-8 grid auto-rows-fr gap-4 sm:grid-cols-2">
+
+        <ol className="relative mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <span
+            aria-hidden
+            className="absolute inset-x-0 top-5 mx-auto hidden h-px w-3/4 bg-border lg:block"
+          />
           {steps.map((step) => (
-            <li key={step.n} className="h-full">
-              <Card className="flex h-full gap-4 p-5">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-                <step.icon className="h-6 w-6" strokeWidth={2} aria-hidden />
-              </span>
-              <div>
-                <p className="text-xs font-semibold tracking-wider text-brand-500">
-                  {step.n}
-                </p>
-                <h3 className="mt-1 text-base font-bold text-navy-900">
-                  {step.title}
-                </h3>
-                <p className="mt-1.5 text-sm leading-6 text-navy-600">
-                  {step.body}
-                </p>
+            <li key={step.n} className="relative lg:text-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-light text-sm font-semibold text-primary lg:mx-auto">
+                {step.n}
               </div>
-              </Card>
+              <h3 className="mt-4 text-base font-bold text-text-primary">
+                {step.title}
+              </h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-text-primary lg:mx-auto lg:max-w-xs">
+                {step.body}
+              </p>
             </li>
           ))}
         </ol>
