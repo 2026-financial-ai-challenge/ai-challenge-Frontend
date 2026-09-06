@@ -5,6 +5,18 @@ const backend = (
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   agentRules: false,
+  async headers() {
+    return [
+      {
+        source: "/cs",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/cs/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
