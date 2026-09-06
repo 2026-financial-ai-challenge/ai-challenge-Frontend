@@ -4,11 +4,15 @@ import { StartTrainingAction } from "@/components/landing/StartTrainingButton";
 import { TrainingProgress } from "@/components/dashboard/TrainingProgress";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useReportQuery, useSessionQuery } from "@/hooks/use-training-queries";
+import {
+  useReportQuery,
+  useSessionQuery,
+  useSessionsListQuery,
+} from "@/hooks/use-training-queries";
 import { ApiError } from "@/lib/errors";
 import { OTP_ERROR } from "@/lib/otp";
 import { replaceTo, useAuthStore } from "@/lib/stores/auth-store";
-import { useSessionStore, type CompletedRun } from "@/lib/stores/session-store";
+import { useSessionStore } from "@/lib/stores/session-store";
 import type { Session } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -57,15 +61,6 @@ function runDate(iso: string): string {
   return iso.slice(0, 10).replaceAll("-", ".");
 }
 
-function runScoreText(run: CompletedRun): string {
-  if (run.announcedScore != null && run.unannouncedScore != null) {
-    return `시뮬 ${run.announcedScore} → 실전 ${run.unannouncedScore}`;
-  }
-  if (run.unannouncedScore != null) return `실전 ${run.unannouncedScore}점`;
-  if (run.announcedScore != null) return `시뮬 ${run.announcedScore}점`;
-  return "완료";
-}
-
 function Judgement({
   tone,
   children,
@@ -96,12 +91,13 @@ export function DashboardView() {
   const sessionHydrated = useSessionStore((state) => state.hasHydrated);
   const sessionId = useSessionStore((state) => state.sessionId);
   const setSessionId = useSessionStore((state) => state.setSessionId);
-  const recordCompletedSession = useSessionStore(
-    (state) => state.recordCompletedSession,
-  );
-  const history = useSessionStore((state) => state.history);
 
   const ready = authHydrated && sessionHydrated;
+
+  const { data: sessionsData } = useSessionsListQuery(ready && Boolean(token));
+  const completedSessions = (sessionsData?.sessions ?? []).filter(
+    (item) => item.reportStatus === "final",
+  );
 
   useEffect(() => {
     if (authHydrated && !token) {
@@ -133,17 +129,6 @@ export function DashboardView() {
       setSessionId(null);
     }
   }, [error, setSessionId, clearAuth]);
-
-  useEffect(() => {
-    if (session && session.reportStatus === "final") {
-      recordCompletedSession({
-        id: session.id,
-        announcedScore: null,
-        unannouncedScore: null,
-        completedAt: new Date().toISOString(),
-      });
-    }
-  }, [session, recordCompletedSession]);
 
   if (!ready || !token) {
     return (
@@ -240,10 +225,10 @@ export function DashboardView() {
       ) : (
         <Card className="mt-8 p-6 sm:p-8 lg:p-10">
           <h2 className="text-base font-bold text-text-primary">
-            {history.length > 0 ? "새 회차 시작" : "첫 훈련 시작"}
+            {completedSessions.length > 0 ? "새 회차 시작" : "첫 훈련 시작"}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-text-primary">
-            {history.length > 0
+            {completedSessions.length > 0
               ? "이전 회차가 끝났습니다. 다시 연습하려면 새 회차를 시작하세요."
               : "보이스피싱 시뮬레이션과 불시 훈련을 같은 번호로 진행하고, 두 결과를 비교합니다."}
           </p>
@@ -253,27 +238,27 @@ export function DashboardView() {
         </Card>
       )}
 
-      {history.length > 0 ? (
+      {completedSessions.length > 0 ? (
         <section className="mt-10">
           <h2 className="text-base font-bold text-text-primary">
-            이전 훈련 · {history.length}회
+            이전 훈련 · {completedSessions.length}회
           </h2>
           <Card className="mt-3 divide-y divide-border p-0">
-            {history.map((run, index) => (
+            {completedSessions.map((item, index) => (
               <div
-                key={run.id}
+                key={item.id}
                 className="flex items-center justify-between gap-4 px-6 py-4"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-text-primary">
-                    {history.length - index}회차
+                    {completedSessions.length - index}회차
                   </p>
                   <p className="mt-0.5 text-xs text-text-secondary">
-                    {runDate(run.completedAt)} · {runScoreText(run)}
+                    {runDate(item.updatedAt)} · 완료
                   </p>
                 </div>
                 <Button asChild variant="link" className="h-auto shrink-0 px-0">
-                  <Link href={`/status/${run.id}`}>리포트 보기</Link>
+                  <Link href={`/status/${item.id}`}>리포트 보기</Link>
                 </Button>
               </div>
             ))}
