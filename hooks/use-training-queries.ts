@@ -22,6 +22,7 @@ export const queryKeys = {
   session: (sessionId: string) => ["session", sessionId] as const,
   report: (sessionId: string, reportStatus: ReportStatus | null) =>
     ["report", sessionId, reportStatus] as const,
+  sessions: ["sessions"] as const,
 };
 
 function useTabVisible() {
@@ -75,6 +76,15 @@ export function useLoginMutation() {
 export function useStartCallMutation() {
   return useMutation({
     mutationFn: (sessionId: string) => api.startCall(sessionId),
+  });
+}
+
+export function useSessionsListQuery(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.sessions,
+    queryFn: () => api.listSessions(),
+    enabled,
+    refetchOnWindowFocus: false,
   });
 }
 

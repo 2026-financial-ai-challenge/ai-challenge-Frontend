@@ -71,9 +71,6 @@ export function SessionFlowView() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const setSessionId = useSessionStore((state) => state.setSessionId);
-  const recordCompletedSession = useSessionStore(
-    (state) => state.recordCompletedSession,
-  );
   const { data, error, isLoading } = useSessionQuery(sessionId);
   const retryMutation = useStartCallMutation();
   const reportStatus = data?.session.reportStatus ?? null;
@@ -112,16 +109,6 @@ export function SessionFlowView() {
       router.replace(`/report/${sessionId}`);
     }
   }, [data, pathname, router, sessionId]);
-
-  useEffect(() => {
-    if (reportStatus !== "final" || !report) return;
-    recordCompletedSession({
-      id: sessionId,
-      announcedScore: report.draft?.score ?? null,
-      unannouncedScore: report.unannounced?.score ?? report.final?.score ?? null,
-      completedAt: new Date().toISOString(),
-    });
-  }, [reportStatus, report, sessionId, recordCompletedSession]);
 
   const heading = isReportReady(reportStatus) ? (
     <>

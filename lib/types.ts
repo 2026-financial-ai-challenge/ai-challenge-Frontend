@@ -111,6 +111,10 @@ export interface GetSessionResponse {
   session: Session;
 }
 
+export interface ListSessionsResponse {
+  sessions: Session[];
+}
+
 export interface ReportTurn {
   role: "user" | "assistant";
   text: string;
