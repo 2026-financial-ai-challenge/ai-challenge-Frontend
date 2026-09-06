@@ -14,7 +14,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
   return (
     <div>
       <Badge>{eyebrow}</Badge>
-      <h2 className="mt-3 text-xl font-bold tracking-tight text-text-primary sm:text-2xl lg:text-[1.7rem]">{title}</h2>
+      <h2 className="mt-3 text-lg font-bold tracking-tight text-text-primary sm:text-xl">{title}</h2>
     </div>
   );
 }
@@ -32,8 +32,8 @@ function ResponseIndicator({
 }) {
   return (
     <div className="flex aspect-square w-full max-w-48 flex-col items-center justify-center justify-self-center rounded-full border-[10px] border-primary-light bg-card p-5 text-center shadow-card lg:max-w-52 lg:p-6">
-      <p className="text-xs leading-5 text-text-secondary lg:text-sm">{label}</p>
-      <p className="mt-2 text-base font-bold text-text-primary lg:text-lg">
+      <p className="text-xs leading-5 text-text-secondary">{label}</p>
+      <p className="mt-2 text-sm font-bold text-text-primary">
         {passed ? positiveText : negativeText}
       </p>
       <Badge className="mt-2" variant={passed ? "success" : "danger"}>
@@ -60,9 +60,9 @@ function BehaviorColumn({
     <div>
       <div className="flex items-center gap-2">
         <Badge variant={tone}>{isDanger ? "위험 신호" : "방어 행동"}</Badge>
-        <h3 className="text-base font-bold text-text-primary lg:text-lg">{title}</h3>
+        <h3 className="text-sm font-bold text-text-primary">{title}</h3>
       </div>
-      <p className="mt-2 text-sm leading-6 text-text-secondary lg:text-base lg:leading-7">{description}</p>
+      <p className="mt-2 text-sm leading-6 text-text-secondary">{description}</p>
       <div className="mt-4 space-y-3">
         {items.length > 0 ? (
           items.map((item, index) => (
@@ -70,9 +70,9 @@ function BehaviorColumn({
               key={`${item.label}-${index}`}
               className={`p-4 sm:p-5 lg:p-6 ${isDanger ? "border-danger/40 bg-danger-light/40" : "border-success/40 bg-success-light/40"}`}
             >
-              <p className="text-sm font-semibold text-text-primary lg:text-base">{item.label}</p>
+              <p className="text-sm font-semibold text-text-primary">{item.label}</p>
               {item.evidence ? (
-                <p className="mt-2 text-sm leading-6 text-text-primary lg:text-base lg:leading-7">“{item.evidence}”</p>
+                <p className="mt-2 text-sm leading-6 text-text-primary">“{item.evidence}”</p>
               ) : null}
             </Card>
           ))
@@ -117,14 +117,14 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
               ? "불시 전화 리포트"
               : "1차 리포트"}
         </Badge>
-        <h1 className="mt-3 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl lg:text-4xl">
+        <h1 className="mt-3 text-xl font-bold tracking-tight text-text-primary sm:text-2xl">
           {isFinal
             ? "두 번의 통화에서 보인 대응을 종합했어요"
             : isUnannounced
             ? "불시 전화에서 보인 대응을 분석했어요"
             : "첫 번째 통화에서 보인 대응을 분석했어요"}
         </h1>
-        <p className="mt-3 text-sm leading-6 text-text-secondary sm:text-base sm:leading-7">
+        <p className="mt-3 text-sm leading-6 text-text-secondary">
           실시간 받아쓰기를 기준으로 만든 결과라 실제 대화와 일부 다를 수 있습니다.
         </p>
       </section>
@@ -139,7 +139,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
                   key={`${turn.text}-${index}`}
                   className={`p-4 sm:p-5 lg:p-6 ${index % 2 === 1 ? "sm:translate-y-4" : ""}`}
                 >
-                  <p className="text-sm leading-6 text-text-primary lg:text-base lg:leading-7">“{turn.text}”</p>
+                  <p className="text-sm leading-6 text-text-primary">“{turn.text}”</p>
                 </Card>
               ))
             ) : (
@@ -155,11 +155,11 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
           </div>
 
           <Card className="p-6 sm:p-8 lg:p-10">
-            <p className="text-xs font-semibold text-primary lg:text-sm">핵심 진단</p>
-            <p className="mt-3 text-lg font-bold leading-8 text-text-primary lg:text-xl lg:leading-9">{body.summary}</p>
+            <p className="text-xs font-semibold text-primary">핵심 진단</p>
+            <p className="mt-3 text-base font-bold leading-7 text-text-primary">{body.summary}</p>
             <div className="mt-5 border-l-2 border-primary/30 pl-4">
               <p className="text-xs text-text-secondary">다음 통화에서는</p>
-              <p className="mt-1 text-sm font-semibold leading-6 text-text-primary lg:text-base lg:leading-7">
+              <p className="mt-1 text-sm font-semibold leading-6 text-text-primary">
                 {body.coaching}
               </p>
             </div>
@@ -225,9 +225,9 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
               >
                 <Card className="p-5 lg:p-7">
                   <p className="text-xs font-semibold text-danger">위험 신호</p>
-                  <p className="mt-2 text-sm font-semibold text-text-primary lg:text-base">{item.label}</p>
+                  <p className="mt-2 text-sm font-semibold text-text-primary">{item.label}</p>
                   {item.evidence ? (
-                    <p className="mt-2 text-sm leading-6 text-text-secondary lg:text-base lg:leading-7">“{item.evidence}”</p>
+                    <p className="mt-2 text-sm leading-6 text-text-secondary">“{item.evidence}”</p>
                   ) : null}
                 </Card>
                 <div className="hidden items-center justify-center text-primary sm:flex" aria-hidden="true">
@@ -235,7 +235,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
                 </div>
                 <Card className="border-primary/30 bg-primary-light/40 p-5 lg:p-7">
                   <p className="text-xs font-semibold text-primary">다음 대응</p>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-text-primary lg:text-base lg:leading-7">
+                  <p className="mt-2 text-sm font-semibold leading-6 text-text-primary">
                     {body.coaching}
                   </p>
                 </Card>
@@ -258,8 +258,8 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
             <div className="mt-7 grid gap-7 sm:grid-cols-3 lg:gap-10">
               {principles.map((principle) => (
                 <div key={principle.title}>
-                  <h3 className="font-bold text-text-primary lg:text-lg">{principle.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-text-secondary lg:text-base lg:leading-7">
+                  <h3 className="text-sm font-bold text-text-primary">{principle.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-text-secondary">
                     {principle.description}
                   </p>
                 </div>
@@ -287,7 +287,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
                     className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                   >
                     <div className={`max-w-[82%] ${isUser ? "text-right" : "text-left"}`}>
-                      <p className="mb-1 px-1 text-[11px] font-medium text-text-secondary">
+                      <p className="mb-1 px-1 text-xs font-medium text-text-secondary">
                         {isUser ? "나" : "훈련 상대"}
                       </p>
                       <p

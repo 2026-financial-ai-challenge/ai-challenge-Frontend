@@ -4,6 +4,7 @@ import type {
   AuthResponse,
   GetReportResponse,
   GetSessionResponse,
+  ListSessionsResponse,
   LoginRequest,
   RequestSignupOtpRequest,
   RequestSignupOtpResponse,
@@ -22,6 +23,7 @@ import type {
  * POST /v1/auth/login
  * POST /v1/consents  — Bearer 필수. 세션 생성 + 훈련 발신
  * POST /v1/sessions/:sessionId/calls
+ * GET  /v1/sessions  — Bearer 필수. 로그인한 계정 소유 세션 전체 목록
  * GET  /v1/sessions/:sessionId
  * GET  /v1/sessions/:sessionId/report
  */
@@ -32,6 +34,7 @@ export interface ApiClient {
   login(body: LoginRequest): Promise<AuthResponse>;
   submitConsent(body: SubmitConsentRequest): Promise<SubmitConsentResponse>;
   startCall(sessionId: string): Promise<StartCallResponse>;
+  listSessions(): Promise<ListSessionsResponse>;
   getSession(sessionId: string): Promise<GetSessionResponse>;
   getReport(sessionId: string): Promise<GetReportResponse>;
 }
@@ -104,6 +107,9 @@ const liveApi: ApiClient = {
       method: "POST",
       body: JSON.stringify(body),
     });
+  },
+  listSessions() {
+    return request<ListSessionsResponse>("/v1/sessions");
   },
   getSession(sessionId) {
     return request<GetSessionResponse>(`/v1/sessions/${sessionId}`);

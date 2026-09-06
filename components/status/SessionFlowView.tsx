@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ReportCollection } from "@/components/report/ReportCollection";
@@ -12,6 +13,7 @@ import {
   queryKeys,
   useReportQuery,
   useSessionQuery,
+  useSessionsListQuery,
   useStartCallMutation,
 } from "@/hooks/use-training-queries";
 import { isReportReady } from "@/lib/types";
@@ -71,9 +73,6 @@ export function SessionFlowView() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const setSessionId = useSessionStore((state) => state.setSessionId);
-  const recordCompletedSession = useSessionStore(
-    (state) => state.recordCompletedSession,
-  );
   const { data, error, isLoading } = useSessionQuery(sessionId);
   const retryMutation = useStartCallMutation();
   const reportStatus = data?.session.reportStatus ?? null;
@@ -82,6 +81,18 @@ export function SessionFlowView() {
     error: reportError,
     isLoading: reportLoading,
   } = useReportQuery(sessionId, reportStatus);
+
+  const { data: sessionsData } = useSessionsListQuery(reportStatus === "final");
+  const ordinal =
+    reportStatus === "final"
+      ? (() => {
+          const index = (sessionsData?.sessions ?? [])
+            .filter((item) => item.reportStatus === "final")
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+            .findIndex((item) => item.id === sessionId);
+          return index >= 0 ? index + 1 : null;
+        })()
+      : null;
 
   const errorMessage =
     error instanceof ApiError
@@ -113,28 +124,35 @@ export function SessionFlowView() {
     }
   }, [data, pathname, router, sessionId]);
 
-  useEffect(() => {
-    if (reportStatus !== "final" || !report) return;
-    recordCompletedSession({
-      id: sessionId,
-      announcedScore: report.draft?.score ?? null,
-      unannouncedScore: report.unannounced?.score ?? report.final?.score ?? null,
-      completedAt: new Date().toISOString(),
-    });
-  }, [reportStatus, report, sessionId, recordCompletedSession]);
-
   const heading = isReportReady(reportStatus) ? (
-    <>
-      <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
-        Training report
-      </p>
-      <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
-        훈련 리포트
-      </h1>
-      <p className="mt-3 text-sm leading-6 text-text-primary">
-        통화가 끝나면 1차 리포트가 먼저 열리고, 최종 분석이 끝나면 같은 화면에서 바뀝니다.
-      </p>
-    </>
+    reportStatus === "final" ? (
+      <>
+        <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
+          Training report
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
+          {ordinal ? `${ordinal}회차 리포트` : "훈련 리포트"}
+        </h1>
+        <Link
+          href="/dashboard"
+          className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+        >
+          ← 대시보드로 돌아가기
+        </Link>
+      </>
+    ) : (
+      <>
+        <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
+          Training report
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
+          훈련 리포트
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-text-primary">
+          통화가 끝나면 1차 리포트가 먼저 열리고, 최종 분석이 끝나면 같은 화면에서 바뀝니다.
+        </p>
+      </>
+    )
   ) : (
     <>
       <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
