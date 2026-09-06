@@ -1,6 +1,7 @@
 import { RootShell } from "@/components/layout/RootShell";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { isPortalHost } from "@/lib/portal-host";
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import { headers } from "next/headers";
@@ -43,6 +44,7 @@ export default async function RootLayout({
         <AppProviders>
           <RootShell isPortal={isPortalHost(host)}>{children}</RootShell>
         </AppProviders>
+        <Analytics />
       </body>
     </html>
   );
