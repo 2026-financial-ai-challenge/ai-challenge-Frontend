@@ -14,8 +14,8 @@ export default function ConsentPage() {
         훈련 참여 동의
       </h1>
       <p className="mt-3 text-sm leading-6 text-text-primary">
-        가입한 번호로 훈련 전화를 걸기 위해, 개인정보 수집과 불시 보이스피싱 훈련
-        전화 수신에 대한 동의가 필요합니다. 처음 훈련할 때 한 번만 동의하면 됩니다.
+        가입할 때 개인정보 수집과 불시 훈련 전화 수신에 동의합니다. 이미 가입한
+        계정은 이 화면에서 한 번만 보완하면 됩니다.
       </p>
       <div className="mt-8">
         <ConsentForm />

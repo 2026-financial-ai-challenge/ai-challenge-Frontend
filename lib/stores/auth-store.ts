@@ -7,7 +7,6 @@ import type { AuthParticipant } from "@/lib/types";
 type AuthState = {
   token: string | null;
   participant: AuthParticipant | null;
-  consentedParticipantIds: number[];
   hasHydrated: boolean;
   setAuth: (token: string, participant: AuthParticipant) => void;
   markConsented: () => void;
@@ -15,22 +14,33 @@ type AuthState = {
   setHasHydrated: (hasHydrated: boolean) => void;
 };
 
+function normalizeParticipant(
+  participant: (AuthParticipant & { hasConsented?: boolean }) | null | undefined,
+  consentedIds: number[] = [],
+): AuthParticipant | null {
+  if (!participant) return null;
+  return {
+    id: participant.id,
+    phoneNumberMasked: participant.phoneNumberMasked,
+    hasConsented:
+      participant.hasConsented === true || consentedIds.includes(participant.id),
+  };
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
       participant: null,
-      consentedParticipantIds: [],
       hasHydrated: false,
       setAuth: (token, participant) => set({ token, participant }),
       markConsented: () =>
         set((state) => {
-          const id = state.participant?.id;
-          if (id == null || state.consentedParticipantIds.includes(id)) {
+          if (state.participant == null || state.participant.hasConsented) {
             return state;
           }
           return {
-            consentedParticipantIds: [...state.consentedParticipantIds, id],
+            participant: { ...state.participant, hasConsented: true },
           };
         }),
       clearAuth: () => set({ token: null, participant: null }),
@@ -55,7 +65,6 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         token: state.token,
         participant: state.participant,
-        consentedParticipantIds: state.consentedParticipantIds,
       }),
       merge: (persistedState, currentState) => {
         const persisted = (persistedState ?? {}) as {
@@ -63,25 +72,13 @@ export const useAuthStore = create<AuthState>()(
           participant?: (AuthParticipant & { hasConsented?: boolean }) | null;
           consentedParticipantIds?: number[];
         };
-        const consentedParticipantIds = [
-          ...(persisted.consentedParticipantIds ?? []),
-        ];
-        if (
-          persisted.participant?.hasConsented === true &&
-          !consentedParticipantIds.includes(persisted.participant.id)
-        ) {
-          consentedParticipantIds.push(persisted.participant.id);
-        }
         return {
           ...currentState,
           token: persisted.token ?? null,
-          participant: persisted.participant
-            ? {
-                id: persisted.participant.id,
-                phoneNumberMasked: persisted.participant.phoneNumberMasked,
-              }
-            : null,
-          consentedParticipantIds,
+          participant: normalizeParticipant(
+            persisted.participant,
+            persisted.consentedParticipantIds,
+          ),
         };
       },
       onRehydrateStorage: () => (state) => {
@@ -96,14 +93,10 @@ export function getAuthToken(): string | null {
   return useAuthStore.getState().token;
 }
 
-export function hasLocalConsent(state: {
+export function hasTrainingConsent(state: {
   participant: AuthParticipant | null;
-  consentedParticipantIds: number[];
 }): boolean {
-  return (
-    state.participant != null &&
-    state.consentedParticipantIds.includes(state.participant.id)
-  );
+  return state.participant?.hasConsented === true;
 }
 
 export function safeNextPath(value: string | null | undefined): string {
@@ -111,6 +104,15 @@ export function safeNextPath(value: string | null | undefined): string {
     return "/dashboard";
   }
   return value;
+}
+
+export function postLoginPath(
+  hasConsented: boolean,
+  nextPath: string,
+): string {
+  if (!hasConsented) return "/consent";
+  if (nextPath === "/consent") return "/dashboard";
+  return nextPath;
 }
 
 export function replaceTo(path: string) {

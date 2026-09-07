@@ -1,15 +1,15 @@
 "use client";
 
 import { OtpCodeForm } from "@/components/forms/OtpCodeForm";
-import { PasswordForm } from "@/components/forms/PasswordForm";
 import { PhoneForm } from "@/components/forms/PhoneForm";
+import { SignupAccountForm } from "@/components/forms/SignupAccountForm";
 import {
   useRequestSignupOtpMutation,
   useSignupMutation,
   useVerifySignupOtpMutation,
 } from "@/hooks/use-training-queries";
 import { ApiError, apiErrorMessage } from "@/lib/errors";
-import { hasLocalConsent, replaceTo, useAuthStore } from "@/lib/stores/auth-store";
+import { hasTrainingConsent, replaceTo, useAuthStore } from "@/lib/stores/auth-store";
 import type { RequestSignupOtpResponse } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -34,7 +34,7 @@ export function SignupForm() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const token = useAuthStore((state) => state.token);
   const setAuth = useAuthStore((state) => state.setAuth);
-  const alreadyConsented = useAuthStore(hasLocalConsent);
+  const alreadyConsented = useAuthStore(hasTrainingConsent);
   const requestOtpMutation = useRequestSignupOtpMutation();
   const verifyOtpMutation = useVerifySignupOtpMutation();
   const signupMutation = useSignupMutation();
@@ -98,15 +98,21 @@ export function SignupForm() {
     }
   };
 
-  const handleCreateAccount = async (password: string) => {
+  const handleCreateAccount = async (values: {
+    password: string;
+    privacy: boolean;
+    unannouncedTraining: boolean;
+  }) => {
     if (!verified) return;
     try {
       const auth = await signupMutation.mutateAsync({
         verificationToken: verified.verificationToken,
-        password,
+        password: values.password,
+        privacy: values.privacy,
+        unannouncedTraining: values.unannouncedTraining,
       });
       setAuth(auth.accessToken, auth.participant);
-      router.push("/consent");
+      router.push("/dashboard");
     } catch {
       setErrorNonce((value) => value + 1);
     }
@@ -128,9 +134,10 @@ export function SignupForm() {
     return (
       <div className="space-y-4">
         <p className="text-sm leading-6 text-text-primary">
-          전화번호 인증이 끝났습니다. 로그인에 사용할 비밀번호를 정해 주세요.
+          전화번호 인증이 끝났습니다. 비밀번호를 정하고, 훈련에 필요한 동의에
+          체크하면 가입이 완료됩니다.
         </p>
-        <PasswordForm
+        <SignupAccountForm
           key={errorNonce}
           onSubmit={handleCreateAccount}
           isSubmitting={signupMutation.isPending}
@@ -182,7 +189,7 @@ export function SignupForm() {
         onSubmit={handleRequestOtp}
         isSubmitting={requestOtpMutation.isPending}
         errorMessage={apiErrorMessage(requestOtpMutation.error)}
-        description="이 번호로 인증번호를 보냅니다. 받은 6자리를 확인한 뒤 비밀번호를 정하면 가입이 완료됩니다."
+        description="이 번호로 인증번호를 보냅니다. 받은 6자리를 확인한 뒤 비밀번호와 동의 절차를 마치면 가입이 완료됩니다."
         submitLabel="인증번호 받기"
         submittingLabel="인증번호 보내는 중..."
       />
