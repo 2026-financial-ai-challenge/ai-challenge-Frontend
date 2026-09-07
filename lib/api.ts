@@ -21,7 +21,7 @@ import type {
  * POST /v1/auth/signup/verify
  * POST /v1/auth/signup
  * POST /v1/auth/login
- * POST /v1/consents  — Bearer 필수. 세션 생성 + 훈련 발신
+ * POST /v1/consents  — Bearer 필수. 회원 동의를 확인한 뒤 세션 생성 + 훈련 발신
  * POST /v1/sessions/:sessionId/calls
  * GET  /v1/sessions  — Bearer 필수. 로그인한 계정 소유 세션 전체 목록
  * GET  /v1/sessions/:sessionId
