@@ -3,7 +3,7 @@
 import { CredentialsForm } from "@/components/forms/CredentialsForm";
 import { useLoginMutation } from "@/hooks/use-training-queries";
 import { apiErrorMessage } from "@/lib/errors";
-import { replaceTo, safeNextPath, useAuthStore } from "@/lib/stores/auth-store";
+import { postLoginPath, replaceTo, safeNextPath, useAuthStore } from "@/lib/stores/auth-store";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
@@ -13,21 +13,22 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const token = useAuthStore((state) => state.token);
+  const hasConsented = useAuthStore((state) => state.participant?.hasConsented === true);
   const setAuth = useAuthStore((state) => state.setAuth);
   const loginMutation = useLoginMutation();
   const nextPath = safeNextPath(searchParams.get("next"));
 
   useEffect(() => {
     if (hasHydrated && token) {
-      replaceTo(nextPath);
+      replaceTo(postLoginPath(hasConsented, nextPath));
     }
-  }, [hasHydrated, nextPath, token]);
+  }, [hasConsented, hasHydrated, nextPath, token]);
 
   const handleSubmit = async (phoneNumber: string, password: string) => {
     try {
       const auth = await loginMutation.mutateAsync({ phoneNumber, password });
       setAuth(auth.accessToken, auth.participant);
-      router.push(nextPath);
+      router.push(postLoginPath(auth.participant.hasConsented, nextPath));
     } catch {
       // error is read from mutation state
     }

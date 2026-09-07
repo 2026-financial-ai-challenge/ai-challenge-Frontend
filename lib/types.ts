@@ -76,8 +76,8 @@ export interface ComparisonResult {
 }
 
 export interface SubmitConsentRequest {
-  privacy: boolean;
-  unannouncedTraining: boolean;
+  privacy?: boolean;
+  unannouncedTraining?: boolean;
 }
 
 export interface SubmitConsentResponse {
@@ -168,6 +168,7 @@ export interface StartCallResponse {
 export interface AuthParticipant {
   id: number;
   phoneNumberMasked: string;
+  hasConsented: boolean;
 }
 
 export interface AuthResponse {
@@ -201,6 +202,8 @@ export interface VerifySignupOtpResponse {
 export interface SignupRequest {
   verificationToken: string;
   password: string;
+  privacy: boolean;
+  unannouncedTraining: boolean;
 }
 
 export interface LoginRequest {

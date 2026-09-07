@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
 import { apiErrorMessage } from "@/lib/errors";
-import { hasLocalConsent, useAuthStore } from "@/lib/stores/auth-store";
+import { hasTrainingConsent, useAuthStore } from "@/lib/stores/auth-store";
 import { useSessionStore } from "@/lib/stores/session-store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -24,7 +24,7 @@ export function StartTrainingAction({
   const router = useRouter();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const token = useAuthStore((state) => state.token);
-  const alreadyConsented = useAuthStore(hasLocalConsent);
+  const alreadyConsented = useAuthStore(hasTrainingConsent);
   const markConsented = useAuthStore((state) => state.markConsented);
   const setSessionId = useSessionStore((state) => state.setSessionId);
   const startMutation = useSubmitConsentMutation();
@@ -42,7 +42,7 @@ export function StartTrainingAction({
   if (!token) {
     return (
       <Button asChild size={size} className={className}>
-        <Link href="/login?next=/consent">{label}</Link>
+        <Link href="/login?next=/dashboard">{label}</Link>
       </Button>
     );
   }
@@ -58,10 +58,7 @@ export function StartTrainingAction({
   const handleStart = async () => {
     setErrorMessage(null);
     try {
-      const { sessionId } = await startMutation.mutateAsync({
-        privacy: true,
-        unannouncedTraining: true,
-      });
+      const { sessionId } = await startMutation.mutateAsync({});
       markConsented();
       setSessionId(sessionId);
       router.push(`/status/${sessionId}`);
