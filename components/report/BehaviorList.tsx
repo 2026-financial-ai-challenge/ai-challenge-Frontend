@@ -34,7 +34,7 @@ export function BehaviorList({ items }: BehaviorListProps) {
                   </Badge>
                   <span className="text-[11px] text-text-secondary">{status}</span>
                 </div>
-                <p className="mt-1 text-sm leading-5 text-text-primary">
+                <p className="mt-1 text-base leading-5 text-text-primary">
                   {item.description}
                 </p>
               </div>

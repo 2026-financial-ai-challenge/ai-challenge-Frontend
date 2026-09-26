@@ -83,16 +83,16 @@ export function OtpForm({
       className="space-y-4"
     >
       <div>
-        <p className="text-sm leading-6 text-text-primary">
+        <p className="text-base leading-6 text-text-primary">
           <span className="font-semibold text-text-primary">{phoneNumberMasked}</span>{" "}
           번호 확인입니다. 지금 보내는 문자는 훈련 전화가 아닙니다.
         </p>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-base text-text-secondary">
           아래 인증코드를 {sendToDisplay}로 보낸 다음, 전송 완료를 눌러 주세요.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-primary-light bg-primary-light px-4 py-4">
+      <div className="rounded-lg border border-primary-light bg-primary-light px-4 py-4">
         <div className="flex items-end justify-between gap-3">
           <p className="text-xs font-medium text-text-secondary">보낼 번호</p>
           <p

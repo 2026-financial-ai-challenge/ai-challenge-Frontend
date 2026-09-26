@@ -64,13 +64,13 @@ export function OtpCodeForm({
       className="space-y-4"
     >
       <div>
-        <p className="text-sm leading-6 text-text-primary">
+        <p className="text-base leading-6 text-text-primary">
           <span className="font-semibold text-text-primary">
             {phoneNumberMasked}로
           </span>{" "}
           인증번호를 보냈습니다.
         </p>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-base text-text-secondary">
           문자에 있는 6자리 번호를 입력해 주세요. 지금 오는 문자는 훈련 전화가
           아닙니다.
         </p>

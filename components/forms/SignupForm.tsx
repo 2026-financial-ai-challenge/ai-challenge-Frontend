@@ -133,7 +133,7 @@ export function SignupForm() {
   if (verified) {
     return (
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-text-primary">
+        <p className="text-base leading-6 text-text-primary">
           전화번호 인증이 끝났습니다. 비밀번호를 정하고, 훈련에 필요한 동의에
           체크하면 가입이 완료됩니다.
         </p>

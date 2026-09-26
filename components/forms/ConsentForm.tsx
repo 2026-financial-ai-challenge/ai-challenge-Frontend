@@ -15,6 +15,24 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
+function ConsentFormSkeleton() {
+  return (
+    <div className="animate-pulse space-y-5" role="status">
+      <span className="sr-only">로그인 상태를 확인하고 있습니다...</span>
+      {[0, 1].map((i) => (
+        <div key={i} className="space-y-3 rounded-lg border border-border bg-card p-5">
+          <div className="h-[1.125rem] w-40 rounded bg-primary-light" />
+          <div className="h-4 w-full rounded bg-primary-light" />
+          <div className="h-4 w-5/6 rounded bg-primary-light" />
+          <div className="h-16 w-full rounded bg-primary-light" />
+          <div className="h-5 w-full rounded bg-primary-light" />
+        </div>
+      ))}
+      <div className="h-10 w-full rounded-lg bg-primary-light" />
+    </div>
+  );
+}
+
 export function ConsentForm() {
   const router = useRouter();
   const setSessionId = useSessionStore((state) => state.setSessionId);
@@ -70,15 +88,13 @@ export function ConsentForm() {
   );
 
   if (!hasHydrated || !token) {
-    return (
-      <p className="text-sm text-text-secondary">로그인 상태를 확인하고 있습니다...</p>
-    );
+    return <ConsentFormSkeleton />;
   }
 
   if (alreadyConsented) {
     return (
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-text-primary">
+        <p className="text-base leading-6 text-text-primary">
           이미 동의하셨습니다. 바로 다음 훈련을 시작할 수 있습니다.
         </p>
         {submitError ? (

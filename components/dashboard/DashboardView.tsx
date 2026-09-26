@@ -71,7 +71,7 @@ function Judgement({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-text-primary",
+        "inline-flex items-center rounded px-2 py-0.5 text-xs font-medium text-text-primary",
         tone === "success" && "bg-success-light",
         tone === "caution" && "bg-caution-light",
         tone === "danger" && "bg-danger-light",
@@ -132,10 +132,12 @@ export function DashboardView() {
 
   if (!ready || !token) {
     return (
-      <div className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
-        <p className="text-sm text-text-secondary">
-          로그인 상태를 확인하고 있습니다...
-        </p>
+      <div className="mx-auto max-w-5xl px-5 py-12 sm:px-7 sm:py-16 lg:px-8">
+        <div className="animate-pulse space-y-8" role="status">
+          <span className="sr-only">로그인 상태를 확인하고 있습니다...</span>
+          <div className="h-8 w-32 rounded bg-primary-light" />
+          <div className="h-64 w-full rounded-lg border border-border bg-card" />
+        </div>
       </div>
     );
   }
@@ -187,7 +189,7 @@ export function DashboardView() {
                     <p className="mt-5 text-sm font-semibold text-text-primary">
                       다음: 불시 전화
                     </p>
-                    <p className="mt-1 text-sm leading-relaxed text-text-primary">
+                    <p className="mt-1 text-base leading-relaxed text-text-primary">
                       준비되면 예고 없이 실전 훈련 전화가 한 차례 더 걸려옵니다.
                     </p>
                   </>
@@ -196,7 +198,7 @@ export function DashboardView() {
                     <p className="text-sm text-text-primary">
                       {statusLabel(session)}
                     </p>
-                    <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+                    <p className="mt-1 text-base leading-relaxed text-text-secondary">
                       통화는 휴대전화에서 이뤄집니다. 이 화면에서 통화하지
                       않습니다.
                     </p>
@@ -227,7 +229,7 @@ export function DashboardView() {
           <h2 className="text-base font-bold text-text-primary">
             {completedSessions.length > 0 ? "새 회차 시작" : "첫 훈련 시작"}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-text-primary">
+          <p className="mt-2 text-base leading-relaxed text-text-primary">
             {completedSessions.length > 0
               ? "이전 회차가 끝났습니다. 다시 연습하려면 새 회차를 시작하세요."
               : "보이스피싱 시뮬레이션과 불시 훈련을 같은 번호로 진행하고, 두 결과를 비교합니다."}

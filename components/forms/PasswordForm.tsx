@@ -52,7 +52,7 @@ export function PasswordForm({
         <Label htmlFor="password" className="text-text-primary">
           비밀번호
         </Label>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-base text-text-secondary">
           영문과 숫자를 포함해 8자 이상으로 입력해 주세요.
         </p>
         <PasswordInput

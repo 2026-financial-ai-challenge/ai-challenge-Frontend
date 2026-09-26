@@ -75,7 +75,7 @@ export function CredentialsForm({
         <Label htmlFor="phoneNumber" className="text-text-primary">
           휴대전화번호
         </Label>
-        <p className="mt-1 text-sm text-text-secondary">{phoneDescription}</p>
+        <p className="mt-1 text-base text-text-secondary">{phoneDescription}</p>
         <Input
           id="phoneNumber"
           type="tel"

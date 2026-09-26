@@ -127,10 +127,7 @@ export function SessionFlowView() {
   const heading = isReportReady(reportStatus) ? (
     reportStatus === "final" ? (
       <>
-        <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
-          Training report
-        </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
           {ordinal ? `${ordinal}회차 리포트` : "훈련 리포트"}
         </h1>
         <Link
@@ -142,26 +139,20 @@ export function SessionFlowView() {
       </>
     ) : (
       <>
-        <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
-          Training report
-        </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
           훈련 리포트
         </h1>
-        <p className="mt-3 text-sm leading-6 text-text-primary">
+        <p className="mt-3 text-base leading-6 text-text-primary">
           통화가 끝나면 1차 리포트가 먼저 열리고, 최종 분석이 끝나면 같은 화면에서 바뀝니다.
         </p>
       </>
     )
   ) : (
     <>
-      <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
-        Training status
-      </p>
-      <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
+      <h1 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
         훈련 전화 상태
       </h1>
-      <p className="mt-3 text-sm leading-6 text-text-primary">
+      <p className="mt-3 text-base leading-6 text-text-primary">
         서버가 알려 주는 상태만 표시합니다. 통화는 휴대전화에서 이루어집니다.
       </p>
     </>
@@ -247,7 +238,7 @@ export function SessionFlowView() {
             {session.phoneNumberMasked}
           </p>
           <h2 className="mt-2 text-xl font-bold text-text-primary">{copy.title}</h2>
-          <p className="mt-2 text-sm leading-6 text-text-primary">{copy.body}</p>
+          <p className="mt-2 text-base leading-6 text-text-primary">{copy.body}</p>
           {errorMessage ? (
             <p className="mt-3 text-sm text-destructive">{errorMessage}</p>
           ) : null}

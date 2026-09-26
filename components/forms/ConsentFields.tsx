@@ -41,7 +41,7 @@ export function ConsentFields({
             개인정보 수집·이용 동의
             <span className="ml-1.5 font-medium text-destructive">필수</span>
           </legend>
-          <div className="mt-3 space-y-2 text-sm leading-6 text-text-primary">
+          <div className="mt-3 space-y-2 text-base leading-6 text-text-primary">
             <p>
               훈련 전화를 걸기 위해 휴대전화번호만 수집합니다. 이름, 주민등록번호,
               계좌번호 등 다른 개인정보는 받지 않습니다.
@@ -64,7 +64,7 @@ export function ConsentFields({
             />
             <Label
               htmlFor="privacy"
-              className="cursor-pointer leading-5 text-text-primary"
+              className="cursor-pointer text-base leading-5 text-text-primary"
             >
               위 내용을 확인했으며, 개인정보 수집·이용에 동의합니다.
             </Label>
@@ -83,7 +83,7 @@ export function ConsentFields({
             불시 보이스피싱 훈련 수신 동의
             <span className="ml-1.5 font-medium text-destructive">필수</span>
           </legend>
-          <div className="mt-3 space-y-2 text-sm leading-6 text-text-primary">
+          <div className="mt-3 space-y-2 text-base leading-6 text-text-primary">
             <p>
               보이스피싱 시뮬레이션 이후, 별도의 사전 알림 없이 불시 보이스피싱
               훈련 전화가 한 차례 더 걸릴 수 있습니다. 발신 시점과 시간대는 훈련
@@ -106,7 +106,7 @@ export function ConsentFields({
             />
             <Label
               htmlFor="unannouncedTraining"
-              className="cursor-pointer leading-5 text-text-primary"
+              className="cursor-pointer text-base leading-5 text-text-primary"
             >
               불시 보이스피싱 훈련 전화를 수신하는 데 동의합니다.
             </Label>
