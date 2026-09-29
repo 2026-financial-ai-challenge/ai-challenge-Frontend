@@ -16,7 +16,7 @@ export function isPortalHost(hostHeader: string): boolean {
   );
 }
 
-export function portalHostnames(): string[] {
+function portalHostnames(): string[] {
   return (process.env.NEXT_PUBLIC_PORTAL_HOSTS ?? DEFAULT_PORTAL_HOSTS)
     .split(",")
     .map((value) => value.trim().toLowerCase())

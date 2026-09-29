@@ -6,21 +6,29 @@ import {
   type ConsentFieldValues,
 } from "@/components/forms/ConsentFields";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
+import { useRequireAuth } from "@/hooks/use-auth-redirect";
 import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
 import { ApiError, apiErrorMessage } from "@/lib/errors";
-import { hasTrainingConsent, replaceTo, useAuthStore } from "@/lib/stores/auth-store";
+import {
+  hasTrainingConsent,
+  replaceTo,
+  useAuthStore,
+} from "@/lib/stores/auth-store";
 import { useSessionStore } from "@/lib/stores/session-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 function ConsentFormSkeleton() {
   return (
     <div className="animate-pulse space-y-5" role="status">
       <span className="sr-only">로그인 상태를 확인하고 있습니다...</span>
-      {[0, 1].map((i) => (
-        <div key={i} className="space-y-3 rounded-lg border border-border bg-card p-5">
+      {[0, 1].map((index) => (
+        <div
+          key={index}
+          className="space-y-3 rounded-lg border border-border bg-card p-5"
+        >
           <div className="h-[1.125rem] w-40 rounded bg-primary-light" />
           <div className="h-4 w-full rounded bg-primary-light" />
           <div className="h-4 w-5/6 rounded bg-primary-light" />
@@ -35,36 +43,25 @@ function ConsentFormSkeleton() {
 
 export function ConsentForm() {
   const router = useRouter();
+  const isAuthenticated = useRequireAuth("/consent");
   const setSessionId = useSessionStore((state) => state.setSessionId);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const token = useAuthStore((state) => state.token);
   const alreadyConsented = useAuthStore(hasTrainingConsent);
   const markConsented = useAuthStore((state) => state.markConsented);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const consentMutation = useSubmitConsentMutation();
 
-  useEffect(() => {
-    if (!hasHydrated) return;
-    if (!token) {
-      replaceTo("/login?next=/consent");
-    }
-  }, [hasHydrated, token]);
-
   const {
+    control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<ConsentFieldValues>({
     resolver: zodResolver(consentFieldSchema),
-    defaultValues: {
-      privacy: false,
-      unannouncedTraining: false,
-    },
+    defaultValues: { privacy: false, unannouncedTraining: false },
   });
 
-  const privacy = watch("privacy");
-  const unannouncedTraining = watch("unannouncedTraining");
+  const privacy = useWatch({ control, name: "privacy" });
+  const unannouncedTraining = useWatch({ control, name: "unannouncedTraining" });
 
   const startTraining = async (values: ConsentFieldValues) => {
     try {
@@ -87,7 +84,7 @@ export function ConsentForm() {
       : undefined,
   );
 
-  if (!hasHydrated || !token) {
+  if (!isAuthenticated) {
     return <ConsentFormSkeleton />;
   }
 
@@ -97,16 +94,14 @@ export function ConsentForm() {
         <p className="text-base leading-6 text-text-primary">
           이미 동의하셨습니다. 바로 다음 훈련을 시작할 수 있습니다.
         </p>
-        {submitError ? (
-          <p className="text-sm text-destructive" role="alert">
-            {submitError}
-          </p>
-        ) : null}
+        <FormError message={submitError} />
         <Button
           type="button"
           className="w-full"
           disabled={consentMutation.isPending}
-          onClick={() => void startTraining({ privacy: true, unannouncedTraining: true })}
+          onClick={() =>
+            void startTraining({ privacy: true, unannouncedTraining: true })
+          }
         >
           {consentMutation.isPending ? "훈련 준비 중..." : "훈련 시작하기"}
         </Button>
@@ -132,13 +127,13 @@ export function ConsentForm() {
         unannouncedError={errors.unannouncedTraining?.message}
       />
 
-      {submitError ? (
-        <p className="text-sm text-destructive" role="alert">
-          {submitError}
-        </p>
-      ) : null}
+      <FormError message={submitError} />
 
-      <Button type="submit" className="w-full" disabled={consentMutation.isPending}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={consentMutation.isPending}
+      >
         {consentMutation.isPending ? "훈련 준비 중..." : "동의하고 훈련 시작"}
       </Button>
     </form>

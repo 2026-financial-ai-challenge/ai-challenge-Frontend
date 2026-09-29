@@ -1,4 +1,4 @@
-import { StartTrainingAction } from "@/components/landing/StartTrainingButton";
+import { StartTrainingAction } from "@/components/landing/StartTrainingAction";
 import { ScoreGauge } from "@/components/report/ScoreGauge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";

@@ -12,4 +12,3 @@ export const useIntroStore = create<IntroState>((set) => ({
   active: false,
   setActive: (active) => set({ active }),
 }));
-  

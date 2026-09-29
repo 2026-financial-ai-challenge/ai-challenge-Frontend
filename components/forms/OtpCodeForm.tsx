@@ -1,10 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OTP_ERROR } from "@/lib/otp";
 import { useEffect, useState } from "react";
+
+const CODE_LENGTH = 6;
 
 type OtpCodeFormProps = {
   phoneNumberMasked: string;
@@ -25,6 +28,21 @@ function formatMmSs(totalSec: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+/** 두 마감 시각까지 남은 초를 1초마다 갱신한다. */
+function useCountdowns(expiresAt: number, resendAt: number) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return {
+    expiresInSec: Math.max(0, Math.ceil((expiresAt - now) / 1000)),
+    resendInSec: Math.max(0, Math.ceil((resendAt - now) / 1000)),
+  };
+}
+
 export function OtpCodeForm({
   phoneNumberMasked,
   expiresAt,
@@ -37,22 +55,17 @@ export function OtpCodeForm({
   errorMessage,
   errorCode,
 }: OtpCodeFormProps) {
-  const [now, setNow] = useState(() => Date.now());
   const [code, setCode] = useState("");
+  const { expiresInSec, resendInSec } = useCountdowns(expiresAt, resendAt);
 
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const expiresInSec = Math.max(0, Math.ceil((expiresAt - now) / 1000));
-  const resendInSec = Math.max(0, Math.ceil((resendAt - now) / 1000));
   const expired = expiresInSec === 0;
-  const locked = errorCode === OTP_ERROR.OTP_LOCKED;
-  const notRequested = errorCode === OTP_ERROR.OTP_NOT_REQUESTED;
-  const rateLimited = errorCode === OTP_ERROR.OTP_RATE_LIMITED;
-  const confirmBlocked = expired || locked || notRequested || code.length !== 6;
-  const resendBlocked = isResending || resendInSec > 0 || rateLimited;
+  const confirmBlocked =
+    expired ||
+    code.length !== CODE_LENGTH ||
+    errorCode === OTP_ERROR.OTP_LOCKED ||
+    errorCode === OTP_ERROR.OTP_NOT_REQUESTED;
+  const resendBlocked =
+    isResending || resendInSec > 0 || errorCode === OTP_ERROR.OTP_RATE_LIMITED;
 
   return (
     <form
@@ -96,22 +109,18 @@ export function OtpCodeForm({
           inputMode="numeric"
           autoComplete="one-time-code"
           autoFocus
-          maxLength={6}
+          maxLength={CODE_LENGTH}
           placeholder="000000"
           className="mt-3 text-center text-2xl font-bold tracking-[0.35em]"
           value={code}
           onChange={(event) =>
-            setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+            setCode(event.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))
           }
           aria-invalid={errorMessage ? "true" : "false"}
         />
       </div>
 
-      {errorMessage ? (
-        <p className="text-sm text-destructive" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      <FormError message={errorMessage} />
 
       <Button
         type="submit"
@@ -135,7 +144,12 @@ export function OtpCodeForm({
               ? `${resendInSec}초 후 다시 받기`
               : "다시 받기"}
         </Button>
-        <Button type="button" variant="ghost" className="w-full" onClick={onChangePhone}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          onClick={onChangePhone}
+        >
           번호 변경
         </Button>
       </div>

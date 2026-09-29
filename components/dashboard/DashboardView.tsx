@@ -1,9 +1,10 @@
 "use client";
 
-import { StartTrainingAction } from "@/components/landing/StartTrainingButton";
 import { TrainingProgress } from "@/components/dashboard/TrainingProgress";
+import { StartTrainingAction } from "@/components/landing/StartTrainingAction";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useRequireAuth } from "@/hooks/use-auth-redirect";
 import {
   useReportQuery,
   useSessionQuery,
@@ -83,8 +84,7 @@ function Judgement({
 }
 
 export function DashboardView() {
-  const authHydrated = useAuthStore((state) => state.hasHydrated);
-  const token = useAuthStore((state) => state.token);
+  const isAuthenticated = useRequireAuth("/dashboard");
   const participant = useAuthStore((state) => state.participant);
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
@@ -92,20 +92,14 @@ export function DashboardView() {
   const sessionId = useSessionStore((state) => state.sessionId);
   const setSessionId = useSessionStore((state) => state.setSessionId);
 
-  const ready = authHydrated && sessionHydrated;
+  const ready = isAuthenticated && sessionHydrated;
 
-  const { data: sessionsData } = useSessionsListQuery(ready && Boolean(token));
+  const { data: sessionsData } = useSessionsListQuery(ready);
   const completedSessions = (sessionsData?.sessions ?? []).filter(
     (item) => item.reportStatus === "final",
   );
 
-  useEffect(() => {
-    if (authHydrated && !token) {
-      replaceTo("/login?next=/dashboard");
-    }
-  }, [authHydrated, token]);
-
-  const activeId = ready && token && sessionId ? sessionId : undefined;
+  const activeId = ready && sessionId ? sessionId : undefined;
   const { data, error, isLoading } = useSessionQuery(activeId);
   const session = data?.session ?? null;
   const reportStatus = session?.reportStatus ?? null;
@@ -130,7 +124,7 @@ export function DashboardView() {
     }
   }, [error, setSessionId, clearAuth]);
 
-  if (!ready || !token) {
+  if (!ready) {
     return (
       <div className="mx-auto max-w-5xl px-5 py-12 sm:px-7 sm:py-16 lg:px-8">
         <div className="animate-pulse space-y-8" role="status">

@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/forms/LoginForm";
+import { AuthPageShell } from "@/components/layout/AuthPageShell";
 import { Card } from "@/components/ui/card";
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -29,18 +30,15 @@ function LoginFormSkeleton() {
 
 export default function LoginPage() {
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col justify-center px-5 py-12 sm:py-16 sm:min-h-[75vh]">
-      <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-        로그인
-      </h1>
-      <p className="mt-3 text-base leading-6 text-text-primary">
-        가입할 때 인증한 휴대전화번호와 비밀번호로 로그인합니다.
-      </p>
-      <Card className="mt-8 p-6">
+    <AuthPageShell
+      title="로그인"
+      description="가입할 때 인증한 휴대전화번호와 비밀번호로 로그인합니다."
+    >
+      <Card className="p-6">
         <Suspense fallback={<LoginFormSkeleton />}>
           <LoginForm />
         </Suspense>
       </Card>
-    </div>
+    </AuthPageShell>
   );
 }

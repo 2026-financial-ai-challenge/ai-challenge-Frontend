@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { TrainingReport } from "@/components/report/TrainingReport";
+import { DraftTrainingReport } from "@/components/report/DraftTrainingReport";
 import type { CallReport, ReportTurn } from "@/lib/types";
+import { useState } from "react";
 
-type ReportKey = "draft" | "unannounced" | "final";
+const LABELS = {
+  draft: "1차 리포트",
+  unannounced: "불시 전화 리포트",
+  final: "최종 리포트",
+} as const;
+
+type ReportKey = keyof typeof LABELS;
 
 type ReportCollectionProps = {
   draft: CallReport | null;
@@ -14,12 +20,6 @@ type ReportCollectionProps = {
   unannouncedTurns: ReportTurn[];
 };
 
-const labels: Record<ReportKey, string> = {
-  draft: "1차 리포트",
-  unannounced: "불시 전화 리포트",
-  final: "최종 리포트",
-};
-
 export function ReportCollection({
   draft,
   unannounced,
@@ -27,26 +27,22 @@ export function ReportCollection({
   draftTurns,
   unannouncedTurns,
 }: ReportCollectionProps) {
-  const latest: ReportKey = final
-    ? "final"
-    : unannounced
-      ? "unannounced"
-      : "draft";
-  const [selected, setSelected] = useState<ReportKey>(latest);
-
-  const reports: Partial<Record<ReportKey, CallReport | null>> = {
+  const reports: Record<ReportKey, CallReport | null> = {
     draft,
     unannounced,
     final,
   };
-  const available = (Object.keys(labels) as ReportKey[]).filter(
+  const latest: ReportKey = final ? "final" : unannounced ? "unannounced" : "draft";
+  const [selected, setSelected] = useState<ReportKey>(latest);
+
+  // 선택했던 리포트가 갱신으로 사라지면 가장 최신 리포트로 되돌린다.
+  const active = reports[selected] ? selected : latest;
+  const body = reports[active];
+  if (!body) return null;
+
+  const available = (Object.keys(LABELS) as ReportKey[]).filter(
     (key) => reports[key] != null,
   );
-  const body = reports[selected] ?? reports[latest];
-  const active = body === reports[selected] ? selected : latest;
-  const turns = active === "draft" ? draftTurns : unannouncedTurns;
-
-  if (!body) return null;
 
   return (
     <div>
@@ -67,12 +63,16 @@ export function ReportCollection({
               }`}
               aria-pressed={active === key}
             >
-              {labels[key]}
+              {LABELS[key]}
             </button>
           ))}
         </div>
       ) : null}
-      <TrainingReport status={active} body={body} turns={turns} />
+      <DraftTrainingReport
+        status={active}
+        body={body}
+        turns={active === "draft" ? draftTurns : unannouncedTurns}
+      />
     </div>
   );
 }

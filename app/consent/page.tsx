@@ -1,4 +1,5 @@
 import { ConsentForm } from "@/components/forms/ConsentForm";
+import { AuthPageShell } from "@/components/layout/AuthPageShell";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -9,17 +10,11 @@ export const metadata: Metadata = {
 
 export default function ConsentPage() {
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-xl flex-col justify-center px-5 py-12 sm:py-16 sm:min-h-[75vh]">
-      <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-        훈련 참여 동의
-      </h1>
-      <p className="mt-3 text-base leading-6 text-text-primary">
-        가입할 때 개인정보 수집과 불시 훈련 전화 수신에 동의합니다. 이미 가입한
-        계정은 이 화면에서 한 번만 보완하면 됩니다.
-      </p>
-      <div className="mt-8">
-        <ConsentForm />
-      </div>
-    </div>
+    <AuthPageShell
+      title="훈련 참여 동의"
+      description="가입할 때 개인정보 수집과 불시 훈련 전화 수신에 동의합니다. 이미 가입한 계정은 이 화면에서 한 번만 보완하면 됩니다."
+    >
+      <ConsentForm />
+    </AuthPageShell>
   );
 }
