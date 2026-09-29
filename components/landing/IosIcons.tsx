@@ -6,32 +6,30 @@ interface IconProps {
   className?: string;
 }
 
-/** iOS phone.down.fill — 얇고 얕은 아치형 수화기 */
-const PHONE_DOWN_PATH = "M5.15 15.55 A 9.4 9.4 0 0 1 18.85 15.55";
+/** iOS phone.fill — 꽉 찬 수화기. 기본 각도가 수신(통화하기)이다. */
+const HANDSET_PATH =
+  "M9.36 4.21c-.5-1.02-1.72-1.45-2.74-.95l-2.2 1.08C3.2 4.96 2.55 6.3 2.84 7.6c.82 3.6 2.66 6.9 5.32 9.56 2.66 2.66 5.96 4.5 9.56 5.32 1.3.29 2.64-.36 3.26-1.58l1.08-2.2c.5-1.02.07-2.24-.95-2.74l-3.2-1.6c-.94-.47-2.08-.2-2.7.64l-.92 1.24a15.3 15.3 0 0 1-2.31-1.82 15.3 15.3 0 0 1-1.82-2.31l1.24-.92c.84-.62 1.11-1.76.64-2.7l-1.68-3.28z";
 
 function PhoneHandset({ className, rotate = 0 }: IconProps & { rotate?: number }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
-      <g transform={rotate ? `rotate(${rotate} 12 12)` : undefined}>
-        <path
-          d={PHONE_DOWN_PATH}
-          stroke="currentColor"
-          strokeWidth="2.25"
-          strokeLinecap="round"
-        />
-      </g>
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d={HANDSET_PATH}
+        fill="currentColor"
+        transform={rotate ? `rotate(${rotate} 12 12)` : undefined}
+      />
     </svg>
   );
 }
 
-/** 슬라이더 수신 아이콘 — 종료와 동일, -135° */
+/** 슬라이더 수신 아이콘 — 수화기를 세운 기본 각도 */
 export function PhoneFillIcon({ className }: IconProps) {
-  return <PhoneHandset className={className} rotate={-135} />;
+  return <PhoneHandset className={className} />;
 }
 
-/** 통화 종료 아이콘 */
+/** 통화 종료 아이콘 — iOS phone.down.fill과 같이 135° 기울인다. */
 export function PhoneDownFillIcon({ className }: IconProps) {
-  return <PhoneHandset className={className} />;
+  return <PhoneHandset className={className} rotate={135} />;
 }
 
 /** mic.slash.fill */
