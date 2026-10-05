@@ -13,6 +13,7 @@ import type {
   LoginRequest,
   ReportStatus,
   RequestSignupOtpRequest,
+  Session,
   SignupRequest,
   SubmitConsentRequest,
   VerifySignupOtpRequest,
@@ -24,6 +25,38 @@ export const queryKeys = {
     ["report", sessionId, reportStatus] as const,
   sessions: ["sessions"] as const,
 };
+
+/** 녹음 전사 기반 최종 리포트는 통화 종료 후 몇 분 뒤에 올 수 있다. */
+const REPORT_WAIT_LIMIT_MS = 10 * 60_000;
+
+function reportWaitElapsed(session: Session, fallbackStart: number): number {
+  const updated = Date.parse(session.updatedAt);
+  return Date.now() - (Number.isFinite(updated) ? updated : fallbackStart);
+}
+
+/** 통화는 끝났는데 리포트가 오지 않은 채 자동 확인 시간이 지났는지. */
+export function useReportWaitExpired(session: Session | undefined): boolean {
+  const waiting =
+    session?.callStatus === "completed" &&
+    !isReportReady(session.reportStatus) &&
+    session.reportStatus !== "failed";
+  const updated = session ? Date.parse(session.updatedAt) : NaN;
+  const deadline =
+    waiting && Number.isFinite(updated) ? updated + REPORT_WAIT_LIMIT_MS : null;
+  const [expiredDeadline, setExpiredDeadline] = useState<number | null>(null);
+
+  // 폴링이 멈추면 다시 렌더링되지 않으므로, 시간이 다 되는 순간 직접 깨운다.
+  useEffect(() => {
+    if (deadline === null) return;
+    const timer = setTimeout(
+      () => setExpiredDeadline(deadline),
+      Math.max(0, deadline - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [deadline]);
+
+  return deadline !== null && expiredDeadline === deadline;
+}
 
 function useTabVisible() {
   const [visible, setVisible] = useState(() =>
@@ -76,6 +109,12 @@ export function useLoginMutation() {
 export function useStartCallMutation() {
   return useMutation({
     mutationFn: (sessionId: string) => api.startCall(sessionId),
+  });
+}
+
+export function useCreateWebTrainingLinkMutation() {
+  return useMutation({
+    mutationFn: (sessionId: string) => api.createWebTrainingLink(sessionId),
   });
 }
 
@@ -141,13 +180,12 @@ export function useSessionQuery(sessionId: string | undefined) {
       ) {
         return false;
       }
-      if (Date.now() - startedAtRef.current > 180_000) return false;
       if (session.callStatus === "completed") {
-        const updated = Date.parse(session.updatedAt);
-        if (Number.isFinite(updated) && Date.now() - updated > 20_000) {
-          return false;
-        }
+        const waited = reportWaitElapsed(session, startedAtRef.current);
+        if (waited > REPORT_WAIT_LIMIT_MS) return false;
+        return waited > 60_000 ? 10_000 : 3000;
       }
+      if (Date.now() - startedAtRef.current > 180_000) return false;
       return 3000;
     },
   });

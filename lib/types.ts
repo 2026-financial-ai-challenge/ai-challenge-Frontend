@@ -74,6 +74,29 @@ export interface CallReport {
   source: string;
 }
 
+/** 웹 링크 훈련에서 프론트가 보내는 행동. 입력값은 보내지 않고 행동 종류만 보낸다. */
+export type WebTrainingEventType =
+  | "link_opened"
+  | "identity_submitted"
+  | "case_lookup_submitted"
+  | "financial_info_submitted"
+  | "app_install_clicked"
+  | "report_clicked"
+  | "left_without_input";
+
+/** 기준 60점에서 행동별로 가감한 웹 링크 훈련 결과 */
+export interface WebTrainingReport {
+  score: number;
+  /** 처음 일어난 순서대로, 중복 없이 */
+  events: WebTrainingEventType[];
+  riskBehaviors: ReportBehavior[];
+  defenseBehaviors: ReportBehavior[];
+}
+
+export interface CreateWebTrainingLinkResponse {
+  token: string;
+}
+
 export interface GetReportResponse {
   sessionId: string;
   callId: string | null;
@@ -85,6 +108,8 @@ export interface GetReportResponse {
   unannounced?: CallReport | null;
   final: CallReport | null;
   clawopsSummary?: unknown;
+  /** 웹 링크 훈련을 진행하지 않았으면 없거나 null */
+  webTraining?: WebTrainingReport | null;
 }
 
 export function isReportReady(

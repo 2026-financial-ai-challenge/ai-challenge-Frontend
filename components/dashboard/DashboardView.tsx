@@ -1,6 +1,7 @@
 "use client";
 
 import { TrainingProgress } from "@/components/dashboard/TrainingProgress";
+import { WebTrainingLinkCard } from "@/components/dashboard/WebTrainingLinkCard";
 import { StartTrainingAction } from "@/components/landing/StartTrainingAction";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -218,7 +219,11 @@ export function DashboardView() {
             </p>
           )}
         </Card>
-      ) : (
+      ) : null}
+
+      {inProgress && session ? <WebTrainingLinkCard sessionId={session.id} /> : null}
+
+      {inProgress ? null : (
         <Card className="mt-8 p-6 sm:p-8 lg:p-10">
           <h2 className="text-base font-bold text-text-primary">
             {completedSessions.length > 0 ? "새 회차 시작" : "첫 훈련 시작"}

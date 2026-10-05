@@ -7,7 +7,7 @@ import { useState, type FormEvent } from "react";
 const FAIL_MESSAGE =
   "전자금융망 접속이 원활하지 않습니다. 계좌번호를 다시 확인해 주십시오.";
 
-export function HoldForm() {
+export function HoldForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const [bank, setBank] = useState("선택");
   const [account, setAccount] = useState("");
   const [holder, setHolder] = useState("");
@@ -34,6 +34,10 @@ export function HoldForm() {
 
     setPending(true);
     await new Promise((resolve) => window.setTimeout(resolve, 900));
+    if (onSubmitted) {
+      onSubmitted();
+      return;
+    }
     setPending(false);
     setError(FAIL_MESSAGE);
   }
