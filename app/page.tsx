@@ -62,7 +62,6 @@ export default function HomePage() {
               <Button asChild variant="link" className="h-auto px-0 text-sm">
                 <Link href="/login">이미 계정이 있어요 →</Link>
               </Button>
-              <IntroReplayButton />
             </div>
           </div>
 
@@ -109,6 +108,8 @@ export default function HomePage() {
             </li>
           ))}
         </ol>
+
+        <IntroReplayButton />
       </section>
     </>
   );
