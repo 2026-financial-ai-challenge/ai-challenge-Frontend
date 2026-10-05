@@ -52,7 +52,7 @@ export function WebTrainingSection({
   report: WebTrainingReport;
 }) {
   const events = report.events.filter(
-    (event) => event.eventType in WEB_TRAINING_EVENT_LABELS,
+    (event) => event in WEB_TRAINING_EVENT_LABELS,
   );
 
   return (
@@ -79,13 +79,13 @@ export function WebTrainingSection({
           <ol className="mt-3 flex flex-wrap gap-2">
             {events.map((event, index) => (
               <li
-                key={`${event.eventType}-${index}`}
+                key={event}
                 className="rounded border border-border bg-card px-3 py-1.5 text-sm text-text-primary"
               >
                 <span className="mr-1.5 text-xs tabular-nums text-text-secondary">
                   {index + 1}
                 </span>
-                {WEB_TRAINING_EVENT_LABELS[event.eventType]}
+                {WEB_TRAINING_EVENT_LABELS[event]}
               </li>
             ))}
           </ol>

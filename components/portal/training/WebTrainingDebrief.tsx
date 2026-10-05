@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
   WEB_TRAINING_DEBRIEF,
+  WEB_TRAINING_WARNING_TITLE,
   type WebTrainingAction,
 } from "@/lib/web-training";
 import { cn } from "@/lib/utils";
@@ -23,13 +24,12 @@ export function WebTrainingDebrief({ action }: { action: WebTrainingAction }) {
           {isDanger ? "위험 행동" : "방어 행동"}
         </Badge>
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
-          이것은 훈련이었습니다
+          {isDanger ? WEB_TRAINING_WARNING_TITLE : "이것은 훈련이었습니다"}
         </h1>
         <p className="mt-3 text-base leading-7 text-text-secondary">
           방금 본 화면은 안심피싱이 만든 스미싱 훈련용 가상 사이트입니다.
-          가온형사사법지원포털은 실제로 존재하지 않는 기관이고, 입력한 내용은
-          어디에도 전송·저장되지 않았습니다. 어떤 행동을 했는지만 훈련 결과에
-          기록됩니다.
+          가온형사사법지원포털은 실제로 존재하지 않는 기관이며, 어떤 행동을
+          했는지만 훈련 결과에 기록됩니다.
         </p>
 
         <Card

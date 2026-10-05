@@ -36,14 +36,17 @@ function trainingHref(token: string) {
   };
 }
 
-/** 같은 탭에서 새로고침해도 link_opened·해설 화면이 중복되지 않도록 토큰별로 기록한다. */
+/**
+ * 같은 브라우저에서 링크를 다시 열어도 link_opened가 중복되지 않고, 위험 행동 뒤에는
+ * 만료 화면이 나오도록 토큰별로 기록한다. 백엔드는 행동 뒤에도 링크를 닫지 않는다.
+ */
 function storageKey(token: string, name: "opened" | "left" | "result") {
   return `web-training:${token}:${name}`;
 }
 
 function readStored(token: string, name: "opened" | "left" | "result") {
   try {
-    return window.sessionStorage.getItem(storageKey(token, name));
+    return window.localStorage.getItem(storageKey(token, name));
   } catch {
     return null;
   }
@@ -55,7 +58,7 @@ function writeStored(
   value: string,
 ) {
   try {
-    window.sessionStorage.setItem(storageKey(token, name), value);
+    window.localStorage.setItem(storageKey(token, name), value);
   } catch {
     // 저장소를 못 쓰면 중복 방지만 약해진다.
   }
@@ -86,12 +89,11 @@ export function WebTrainingFlow({ token }: { token: string }) {
       .checkWebTrainingLink(token)
       .then(() => {
         if (cancelled) return;
-        openedAtRef.current = Date.now();
-        const previous = storedResult(token);
-        if (previous) {
-          actedRef.current = true;
-          setResult(previous);
+        if (storedResult(token)) {
+          setLinkState("expired");
+          return;
         }
+        openedAtRef.current = Date.now();
         setLinkState("valid");
         if (!readStored(token, "opened")) {
           writeStored(token, "opened", "1");
@@ -166,13 +168,18 @@ export function WebTrainingFlow({ token }: { token: string }) {
         active={view === "home" ? "온라인민원" : "나의 사건 조회"}
         hrefFor={hrefFor}
         utility={
-          <button
-            type="button"
-            onClick={() => act("report_clicked")}
-            className="min-h-6 cursor-pointer text-white/80 underline-offset-2 hover:text-white hover:underline"
-          >
-            스미싱 의심 문자 신고
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => act("report_clicked")}
+              className="min-h-6 cursor-pointer text-white/80 underline-offset-2 hover:text-white hover:underline"
+            >
+              스미싱 의심 문자 신고
+            </button>
+            <span className="rounded-sm bg-[#d4b36a] px-1.5 py-0.5 text-[11px] font-bold text-[#0b2a4a]">
+              훈련용
+            </span>
+          </div>
         }
       >
         {view === "home" ? (
@@ -192,9 +199,12 @@ export function WebTrainingFlow({ token }: { token: string }) {
               <FormPanel
                 eyebrow="온라인민원"
                 title="나의 사건 조회"
-                body="사건번호와 성명을 입력하면 열람 가능 여부를 안내합니다. 회원가입이 되어 있지 않으면 다음 단계에서 실명 인증이 필요합니다."
+                body="성명을 입력하면 문자 안내 링크에 연결된 사건의 열람 가능 여부를 안내합니다. 회원가입이 되어 있지 않으면 실명 인증이 필요합니다."
               >
-                <InquiryForm onSubmitted={() => act("case_lookup_submitted")} />
+                <InquiryForm
+                  caseNoLinked
+                  onSubmitted={() => act("case_lookup_submitted")}
+                />
               </FormPanel>
             ) : view === "verify" ? (
               <FormPanel

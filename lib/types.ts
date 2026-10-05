@@ -84,15 +84,11 @@ export type WebTrainingEventType =
   | "report_clicked"
   | "left_without_input";
 
-export interface WebTrainingEvent {
-  eventType: WebTrainingEventType;
-  createdAt?: string;
-}
-
 /** 기준 60점에서 행동별로 가감한 웹 링크 훈련 결과 */
 export interface WebTrainingReport {
   score: number;
-  events: WebTrainingEvent[];
+  /** 처음 일어난 순서대로, 중복 없이 */
+  events: WebTrainingEventType[];
   riskBehaviors: ReportBehavior[];
   defenseBehaviors: ReportBehavior[];
 }
