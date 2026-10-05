@@ -1,4 +1,5 @@
 import { BrandImage } from "@/components/brand/BrandImage";
+import { IntroReplayButton } from "@/components/landing/IntroReplayButton";
 import { IntroSequence } from "@/components/landing/IntroSequence";
 import { RedirectIfAuthenticated } from "@/components/landing/RedirectIfAuthenticated";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ export default function HomePage() {
               <Button asChild variant="link" className="h-auto px-0 text-sm">
                 <Link href="/login">이미 계정이 있어요 →</Link>
               </Button>
+              <IntroReplayButton />
             </div>
           </div>
 

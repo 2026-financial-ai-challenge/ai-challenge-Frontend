@@ -128,3 +128,68 @@ export function MessageFillIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+/** lock.fill — 잠금화면 상단 자물쇠 */
+export function LockFillIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
+      <path
+        d="M7.9 10.4V7.6a4.1 4.1 0 0 1 8.2 0v2.8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <rect x="4.6" y="10.2" width="14.8" height="11.2" rx="3.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** flashlight.off.fill — 잠금화면 좌측 하단 손전등 */
+export function FlashlightFillIcon({ className }: IconProps) {
+  // useId()는 콜론을 포함하므로 SVG 프래그먼트 참조용으로 제거한다.
+  const maskId = `flashlight-${React.useId().replace(/:/g, "")}`;
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <mask id={maskId}>
+        <rect width="24" height="24" fill="white" />
+        {/* 헤드 아래 구분선과 몸통의 스위치 홈을 파낸다. */}
+        <rect x="7.6" y="5.2" width="8.8" height="0.9" fill="black" />
+        <rect x="11.05" y="10" width="1.9" height="5.2" rx="0.95" fill="black" />
+      </mask>
+      {/*
+        실물은 네 부분이다 — 넓은 헤드, 그 아래 가로 구분선, 몸통 폭으로
+        좁아지는 사다리꼴 어깨, 스위치 홈이 파인 몸통.
+      */}
+      <g fill="currentColor" mask={`url(#${maskId})`}>
+        <rect x="7.6" y="2.3" width="8.8" height="2.9" rx="0.8" />
+        <path d="M7.9 6h8.2l-1.45 3.5H9.35z" />
+        <rect x="9.4" y="9.2" width="5.2" height="12.5" rx="1.5" />
+      </g>
+      {/* 스위치 손잡이 — 파낸 홈 안에 들어간다. */}
+      <circle cx="12" cy="14" r="0.8" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** camera.fill — 잠금화면 우측 하단 카메라 */
+export function CameraFillIcon({ className }: IconProps) {
+  // useId()는 콜론을 포함하므로 SVG 프래그먼트 참조용으로 제거한다.
+  const maskId = `camera-${React.useId().replace(/:/g, "")}`;
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <mask id={maskId}>
+        <rect width="24" height="24" fill="white" />
+        {/* 렌즈 바깥 원과 오른쪽 위 플래시를 뚫는다. */}
+        <circle cx="12" cy="12.8" r="4.05" fill="black" />
+        <circle cx="18.2" cy="9.6" r="1.05" fill="black" />
+      </mask>
+      {/* 뷰파인더 돌출부는 렌즈 위 가운데에 올라온다. */}
+      <g mask={`url(#${maskId})`} fill="currentColor">
+        <path d="M8.5 4.2h7a1 1 0 0 1 .95.68l.42 1.2H7.13l.42-1.2A1 1 0 0 1 8.5 4.2z" />
+        <rect x="2.2" y="5.6" width="19.6" height="14.2" rx="1.9" />
+      </g>
+      {/* 렌즈는 구멍이 아니라 고리다. 뚫은 원 안에 알이 다시 들어간다. */}
+      <circle cx="12" cy="12.8" r="2.05" fill="currentColor" />
+    </svg>
+  );
+}
