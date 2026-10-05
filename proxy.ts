@@ -1,7 +1,7 @@
 import { isPortalHost } from "@/lib/portal-host";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PORTAL_PAGES = new Set(["", "inquiry", "verify", "hold", "notice"]);
+const PORTAL_PAGES = new Set(["", "inquiry", "verify", "hold", "notice", "t"]);
 
 const PORTAL_ICONS: Record<string, string> = {
   "/favicon.ico": "/portal/favicon.ico",
@@ -62,6 +62,7 @@ export function proxy(request: NextRequest) {
 function isPassthrough(pathname: string) {
   return (
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/v1/") ||
     pathname.startsWith("/favicon") ||
     pathname.includes(".")
   );

@@ -5,7 +5,7 @@ import { portalHref } from "@/lib/portal";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-export function InquiryForm() {
+export function InquiryForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const router = useRouter();
   const [caseNo, setCaseNo] = useState("");
   const [name, setName] = useState("");
@@ -21,6 +21,10 @@ export function InquiryForm() {
     };
     setErrors(next);
     if (next.caseNo || next.name) return;
+    if (onSubmitted) {
+      onSubmitted();
+      return;
+    }
 
     const params = new URLSearchParams({
       caseNo: trimmedCase,

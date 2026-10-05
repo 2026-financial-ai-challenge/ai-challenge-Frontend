@@ -79,6 +79,12 @@ export function useStartCallMutation() {
   });
 }
 
+export function useCreateWebTrainingLinkMutation() {
+  return useMutation({
+    mutationFn: (sessionId: string) => api.createWebTrainingLink(sessionId),
+  });
+}
+
 export function useSessionsListQuery(enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.sessions,

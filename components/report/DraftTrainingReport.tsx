@@ -1,13 +1,20 @@
 import { StartTrainingAction } from "@/components/landing/StartTrainingAction";
 import { ScoreGauge } from "@/components/report/ScoreGauge";
+import { WebTrainingSection } from "@/components/report/WebTrainingSection";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import type { CallReport, ReportBehavior, ReportTurn } from "@/lib/types";
+import type {
+  CallReport,
+  ReportBehavior,
+  ReportTurn,
+  WebTrainingReport,
+} from "@/lib/types";
 
 type DraftTrainingReportProps = {
   status: "draft" | "unannounced" | "final";
   body: CallReport;
   turns: ReportTurn[];
+  webTraining?: WebTrainingReport | null;
 };
 
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
@@ -103,7 +110,12 @@ const principles = [
   },
 ];
 
-export function DraftTrainingReport({ status, body, turns }: DraftTrainingReportProps) {
+export function DraftTrainingReport({
+  status,
+  body,
+  turns,
+  webTraining,
+}: DraftTrainingReportProps) {
   const isUnannounced = status === "unannounced";
   const isFinal = status === "final";
   const userTurns = turns.filter((turn) => turn.role === "user").slice(0, 4);
@@ -197,6 +209,10 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
           </div>
         </div>
       </section>
+
+      {webTraining ? (
+        <WebTrainingSection phoneScore={body.score} report={webTraining} />
+      ) : null}
 
       <section>
         <SectionHeading eyebrow="행동 분석" title="위험했던 순간과 잘 막아낸 순간" />

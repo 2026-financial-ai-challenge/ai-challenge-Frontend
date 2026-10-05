@@ -199,6 +199,7 @@ export function SessionFlowView() {
               final={report?.final ?? null}
               draftTurns={report?.draftTurns ?? report?.turns ?? []}
               unannouncedTurns={report?.unannouncedTurns ?? report?.turns ?? []}
+              webTraining={report?.webTraining ?? null}
             />
           )}
           <FormError message={errorMessage} className="mt-3" />
