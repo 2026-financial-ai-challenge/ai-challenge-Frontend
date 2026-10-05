@@ -46,12 +46,12 @@ export default function HomePage() {
             <Badge className="bg-white text-text-primary">
               AI 보이스피싱 실전 대응훈련
             </Badge>
-            <h1 className="mt-4 max-w-md text-4xl font-bold leading-[1.15] tracking-tight text-text-primary sm:text-5xl">
+            <h1 className="mt-4 max-w-md text-4xl font-bold leading-[1.3] tracking-tight text-text-primary sm:text-5xl sm:leading-[1.25]">
               전화가 오면, 이미
               <br />
               연습해 본 상황이 됩니다
             </h1>
-            <p className="mt-4 max-w-md text-base leading-relaxed text-text-primary">
+            <p className="mt-4 max-w-md break-keep text-base leading-relaxed text-text-primary">
               실제 번호로 훈련 전화가 걸려옵니다. 받아서 대응하고, 통화가 끝나면
               어떻게 반응했는지 코칭 리포트를 받습니다.
             </p>
@@ -60,7 +60,7 @@ export default function HomePage() {
                 <Link href="/signup">회원가입하고 시작하기</Link>
               </Button>
               <Button asChild variant="link" className="h-auto px-0 text-sm">
-                <Link href="/login">이미 계정이 있어요 →</Link>
+                <Link href="/login">이미 계정이 있어요</Link>
               </Button>
             </div>
           </div>
