@@ -3,17 +3,23 @@
 import { OtpCodeForm } from "@/components/forms/OtpCodeForm";
 import { PhoneForm } from "@/components/forms/PhoneForm";
 import { SignupAccountForm } from "@/components/forms/SignupAccountForm";
+import { useRedirectWhenAuthenticated } from "@/hooks/use-auth-redirect";
 import {
   useRequestSignupOtpMutation,
   useSignupMutation,
   useVerifySignupOtpMutation,
 } from "@/hooks/use-training-queries";
 import { ApiError, apiErrorMessage } from "@/lib/errors";
-import { hasTrainingConsent, replaceTo, useAuthStore } from "@/lib/stores/auth-store";
+import { hasTrainingConsent, useAuthStore } from "@/lib/stores/auth-store";
 import type { RequestSignupOtpResponse } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
+const OTP_REQUEST_FAILED =
+  "인증번호 요청에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+const OTP_VERIFY_FAILED =
+  "인증번호 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.";
 
 type OtpTicket = {
   phoneNumber: string;
@@ -26,28 +32,27 @@ type OtpTicket = {
 type VerifiedTicket = {
   phoneNumber: string;
   verificationToken: string;
-  expiresAt: number;
 };
 
 export function SignupForm() {
   const router = useRouter();
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const token = useAuthStore((state) => state.token);
-  const setAuth = useAuthStore((state) => state.setAuth);
   const alreadyConsented = useAuthStore(hasTrainingConsent);
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const redirecting = useRedirectWhenAuthenticated(
+    alreadyConsented ? "/dashboard" : "/consent",
+  );
+
   const requestOtpMutation = useRequestSignupOtpMutation();
   const verifyOtpMutation = useVerifySignupOtpMutation();
   const signupMutation = useSignupMutation();
+
   const [enteredPhone, setEnteredPhone] = useState("");
   const [otpTicket, setOtpTicket] = useState<OtpTicket | null>(null);
   const [verified, setVerified] = useState<VerifiedTicket | null>(null);
+  /** 같은 오류가 반복돼도 폼을 다시 마운트하기 위한 카운터. */
   const [errorNonce, setErrorNonce] = useState(0);
 
-  useEffect(() => {
-    if (hasHydrated && token) {
-      replaceTo(alreadyConsented ? "/dashboard" : "/consent");
-    }
-  }, [alreadyConsented, hasHydrated, token]);
+  const bumpErrorNonce = () => setErrorNonce((value) => value + 1);
 
   const applyOtpResponse = (
     phoneNumber: string,
@@ -65,20 +70,17 @@ export function SignupForm() {
   };
 
   const handleRequestOtp = async (phoneNumber: string) => {
+    verifyOtpMutation.reset();
+    signupMutation.reset();
+    setEnteredPhone(phoneNumber);
     try {
-      verifyOtpMutation.reset();
-      signupMutation.reset();
-      setEnteredPhone(phoneNumber);
-      const response = await requestOtpMutation.mutateAsync({ phoneNumber });
-      applyOtpResponse(phoneNumber, response);
+      applyOtpResponse(
+        phoneNumber,
+        await requestOtpMutation.mutateAsync({ phoneNumber }),
+      );
     } catch {
-      setErrorNonce((value) => value + 1);
+      bumpErrorNonce();
     }
-  };
-
-  const handleResend = async () => {
-    if (!otpTicket) return;
-    await handleRequestOtp(otpTicket.phoneNumber);
   };
 
   const handleConfirmOtp = async (code: string) => {
@@ -91,10 +93,9 @@ export function SignupForm() {
       setVerified({
         phoneNumber: otpTicket.phoneNumber,
         verificationToken: response.verificationToken,
-        expiresAt: Date.now() + response.expiresInSec * 1000,
       });
     } catch {
-      setErrorNonce((value) => value + 1);
+      bumpErrorNonce();
     }
   };
 
@@ -106,15 +107,13 @@ export function SignupForm() {
     if (!verified) return;
     try {
       const auth = await signupMutation.mutateAsync({
+        ...values,
         verificationToken: verified.verificationToken,
-        password: values.password,
-        privacy: values.privacy,
-        unannouncedTraining: values.unannouncedTraining,
       });
       setAuth(auth.accessToken, auth.participant);
       router.push("/dashboard");
     } catch {
-      setErrorNonce((value) => value + 1);
+      bumpErrorNonce();
     }
   };
 
@@ -126,14 +125,12 @@ export function SignupForm() {
     setVerified(null);
   };
 
-  if (hasHydrated && token) {
-    return null;
-  }
+  if (redirecting) return null;
 
   if (verified) {
     return (
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-text-primary">
+        <p className="text-base leading-6 text-text-primary">
           전화번호 인증이 끝났습니다. 비밀번호를 정하고, 훈련에 필요한 동의에
           체크하면 가입이 완료됩니다.
         </p>
@@ -141,7 +138,10 @@ export function SignupForm() {
           key={errorNonce}
           onSubmit={handleCreateAccount}
           isSubmitting={signupMutation.isPending}
-          errorMessage={apiErrorMessage(signupMutation.error)}
+          errorMessage={apiErrorMessage(
+            signupMutation.error,
+            "가입 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+          )}
         />
         <button
           type="button"
@@ -155,15 +155,12 @@ export function SignupForm() {
   }
 
   if (otpTicket) {
-    const requestError = apiErrorMessage(requestOtpMutation.error);
-    const verifyError = apiErrorMessage(verifyOtpMutation.error);
-    const error =
-      requestOtpMutation.isError && requestError
-        ? requestOtpMutation.error
-        : verifyOtpMutation.isError
-          ? verifyOtpMutation.error
-          : null;
-    const errorCode = error instanceof ApiError ? error.code : undefined;
+    // 요청 실패가 우선이고, 없으면 확인 실패를 보여 준다.
+    const failure = requestOtpMutation.isError
+      ? { error: requestOtpMutation.error, fallback: OTP_REQUEST_FAILED }
+      : verifyOtpMutation.isError
+        ? { error: verifyOtpMutation.error, fallback: OTP_VERIFY_FAILED }
+        : null;
 
     return (
       <OtpCodeForm
@@ -172,12 +169,16 @@ export function SignupForm() {
         expiresAt={otpTicket.expiresAt}
         resendAt={otpTicket.resendAt}
         onConfirm={handleConfirmOtp}
-        onResend={handleResend}
+        onResend={() => handleRequestOtp(otpTicket.phoneNumber)}
         onChangePhone={handleChangePhone}
         isSubmitting={verifyOtpMutation.isPending}
         isResending={requestOtpMutation.isPending}
-        errorMessage={requestError ?? verifyError}
-        errorCode={errorCode}
+        errorMessage={
+          failure ? apiErrorMessage(failure.error, failure.fallback) : null
+        }
+        errorCode={
+          failure?.error instanceof ApiError ? failure.error.code : undefined
+        }
       />
     );
   }
@@ -188,7 +189,10 @@ export function SignupForm() {
         defaultPhoneNumber={enteredPhone}
         onSubmit={handleRequestOtp}
         isSubmitting={requestOtpMutation.isPending}
-        errorMessage={apiErrorMessage(requestOtpMutation.error)}
+        errorMessage={apiErrorMessage(
+          requestOtpMutation.error,
+          requestOtpMutation.isError ? OTP_REQUEST_FAILED : undefined,
+        )}
         description="이 번호로 인증번호를 보냅니다. 받은 6자리를 확인한 뒤 비밀번호와 동의 절차를 마치면 가입이 완료됩니다."
         submitLabel="인증번호 받기"
         submittingLabel="인증번호 보내는 중..."

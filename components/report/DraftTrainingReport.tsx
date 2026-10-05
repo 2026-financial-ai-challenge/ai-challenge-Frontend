@@ -1,4 +1,4 @@
-import { StartTrainingAction } from "@/components/landing/StartTrainingButton";
+import { StartTrainingAction } from "@/components/landing/StartTrainingAction";
 import { ScoreGauge } from "@/components/report/ScoreGauge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -12,9 +12,9 @@ type DraftTrainingReportProps = {
 
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <div>
-      <Badge>{eyebrow}</Badge>
-      <h2 className="mt-3 text-lg font-bold tracking-tight text-text-primary sm:text-xl">{title}</h2>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-border pb-3">
+      <h2 className="text-lg font-bold tracking-tight text-text-primary sm:text-xl">{title}</h2>
+      <span className="text-xs text-text-secondary">{eyebrow}</span>
     </div>
   );
 }
@@ -31,14 +31,16 @@ function ResponseIndicator({
   negativeText: string;
 }) {
   return (
-    <div className="flex aspect-square w-full max-w-48 flex-col items-center justify-center justify-self-center rounded-full border-[10px] border-primary-light bg-card p-5 text-center shadow-card lg:max-w-52 lg:p-6">
-      <p className="text-xs leading-5 text-text-secondary">{label}</p>
-      <p className="mt-2 text-sm font-bold text-text-primary">
+    <div className="border border-border bg-card p-5">
+      <p className="text-xs text-text-secondary">{label}</p>
+      <p className="mt-2 text-base font-bold leading-snug text-text-primary">
         {passed ? positiveText : negativeText}
       </p>
-      <Badge className="mt-2" variant={passed ? "success" : "danger"}>
+      <p
+        className={`mt-3 text-xs font-semibold ${passed ? "text-success" : "text-danger"}`}
+      >
         {passed ? "잘했어요" : "보완 필요"}
-      </Badge>
+      </p>
     </div>
   );
 }
@@ -62,7 +64,7 @@ function BehaviorColumn({
         <Badge variant={tone}>{isDanger ? "위험 신호" : "방어 행동"}</Badge>
         <h3 className="text-sm font-bold text-text-primary">{title}</h3>
       </div>
-      <p className="mt-2 text-sm leading-6 text-text-secondary">{description}</p>
+      <p className="mt-2 text-base leading-6 text-text-secondary">{description}</p>
       <div className="mt-4 space-y-3">
         {items.length > 0 ? (
           items.map((item, index) => (
@@ -72,7 +74,7 @@ function BehaviorColumn({
             >
               <p className="text-sm font-semibold text-text-primary">{item.label}</p>
               {item.evidence ? (
-                <p className="mt-2 text-sm leading-6 text-text-primary">“{item.evidence}”</p>
+                <p className="mt-2 text-base leading-6 text-text-primary">“{item.evidence}”</p>
               ) : null}
             </Card>
           ))
@@ -124,7 +126,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
             ? "불시 전화에서 보인 대응을 분석했어요"
             : "첫 번째 통화에서 보인 대응을 분석했어요"}
         </h1>
-        <p className="mt-3 text-sm leading-6 text-text-secondary">
+        <p className="mt-3 text-base leading-6 text-text-secondary">
           실시간 받아쓰기를 기준으로 만든 결과라 실제 대화와 일부 다를 수 있습니다.
         </p>
       </section>
@@ -139,7 +141,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
                   key={`${turn.text}-${index}`}
                   className={`p-4 sm:p-5 lg:p-6 ${index % 2 === 1 ? "sm:translate-y-4" : ""}`}
                 >
-                  <p className="text-sm leading-6 text-text-primary">“{turn.text}”</p>
+                  <p className="text-base leading-6 text-text-primary">“{turn.text}”</p>
                 </Card>
               ))
             ) : (
@@ -159,7 +161,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
             <p className="mt-3 text-base font-bold leading-7 text-text-primary">{body.summary}</p>
             <div className="mt-5 border-l-2 border-primary/30 pl-4">
               <p className="text-xs text-text-secondary">다음 통화에서는</p>
-              <p className="mt-1 text-sm font-semibold leading-6 text-text-primary">
+              <p className="mt-1 text-base font-semibold leading-6 text-text-primary">
                 {body.coaching}
               </p>
             </div>
@@ -227,7 +229,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
                   <p className="text-xs font-semibold text-danger">위험 신호</p>
                   <p className="mt-2 text-sm font-semibold text-text-primary">{item.label}</p>
                   {item.evidence ? (
-                    <p className="mt-2 text-sm leading-6 text-text-secondary">“{item.evidence}”</p>
+                    <p className="mt-2 text-base leading-6 text-text-secondary">“{item.evidence}”</p>
                   ) : null}
                 </Card>
                 <div className="hidden items-center justify-center text-primary sm:flex" aria-hidden="true">
@@ -235,7 +237,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
                 </div>
                 <Card className="border-primary/30 bg-primary-light/40 p-5 lg:p-7">
                   <p className="text-xs font-semibold text-primary">다음 대응</p>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-text-primary">
+                  <p className="mt-2 text-base font-semibold leading-6 text-text-primary">
                     {body.coaching}
                   </p>
                 </Card>
@@ -243,7 +245,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
             ))
           ) : (
             <Card className="border-success/40 bg-success-light/40 p-5">
-              <p className="text-sm font-semibold text-text-primary">
+              <p className="text-base font-semibold text-text-primary">
                 뚜렷한 위험 행동이 감지되지 않았어요. 지금의 방어 습관을 유지해 주세요.
               </p>
             </Card>
@@ -259,7 +261,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
               {principles.map((principle) => (
                 <div key={principle.title}>
                   <h3 className="text-sm font-bold text-text-primary">{principle.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-text-secondary">
+                  <p className="mt-2 text-base leading-6 text-text-secondary">
                     {principle.description}
                   </p>
                 </div>
@@ -271,7 +273,7 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
 
       {turns.length > 0 ? (
         <details className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between rounded-bubble border border-primary-light bg-card px-5 py-4 text-sm font-semibold text-text-primary shadow-card [&::-webkit-details-marker]:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-border bg-card px-5 py-4 text-sm font-semibold text-text-primary [&::-webkit-details-marker]:hidden">
             전체 대화 기록 보기
             <span className="text-primary transition-transform group-open:rotate-180" aria-hidden="true">
               ↓
@@ -293,8 +295,8 @@ export function DraftTrainingReport({ status, body, turns }: DraftTrainingReport
                       <p
                         className={
                           isUser
-                            ? "rounded-bubble rounded-br-md bg-primary px-4 py-2.5 text-left text-sm leading-6 text-white shadow-sm"
-                            : "rounded-bubble rounded-bl-md border border-primary-light bg-white px-4 py-2.5 text-sm leading-6 text-text-primary shadow-sm"
+                            ? "rounded-chat rounded-br-md bg-primary px-4 py-2.5 text-left text-sm leading-6 text-white"
+                            : "rounded-chat rounded-bl-md border border-border bg-white px-4 py-2.5 text-sm leading-6 text-text-primary"
                         }
                       >
                         {turn.text}

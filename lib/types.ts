@@ -10,21 +10,14 @@ export type CallStatus =
 /** 통화 종료 후 리포트 생성 단계. 통화 전이면 null 또는 none. */
 export type ReportStatus = "none" | "pending" | "draft" | "final" | "failed";
 
-/** 보이스피싱 시뮬레이션(사전 안내 후 발신) / 불시 보이스피싱 훈련(시점 비공개 발신) */
-export type TrainingType = "announced" | "unannounced";
-
-export type BehaviorCategory =
-  | "disclosure"
-  | "compliance"
-  | "skepticism"
-  | "termination"
-  | "verification";
-
 export interface ConsentRecord {
   privacy: boolean;
   unannouncedTraining: boolean;
   consentedAt: string;
 }
+
+/** 보이스피싱 시뮬레이션(사전 안내 후 발신) / 불시 보이스피싱 훈련(시점 비공개 발신) */
+export type TrainingType = "announced" | "unannounced";
 
 export interface Session {
   id: string;
@@ -42,39 +35,6 @@ export interface Session {
   updatedAt: string;
 }
 
-export interface BehaviorItem {
-  id: string;
-  category: BehaviorCategory;
-  label: string;
-  description: string;
-  /** 통화 중 해당 행동이 감지되었는지 */
-  detected: boolean;
-  /** 대응 관점에서 바람직한 행동인지 (의심 표현, 공식 채널 확인 등) */
-  isPositive: boolean;
-}
-
-export interface TrainingResult {
-  sessionId: string;
-  trainingType: TrainingType;
-  /** 0–100, 높을수록 대응이 우수 */
-  score: number;
-  durationSec: number;
-  scenarioName: string;
-  scenarioSummary: string;
-  behaviors: BehaviorItem[];
-  feedback: string;
-  completedAt: string;
-}
-
-export interface ComparisonResult {
-  sessionId: string;
-  announced: TrainingResult;
-  unannounced: TrainingResult;
-  /** 불시 보이스피싱 훈련 점수 − 보이스피싱 시뮬레이션 점수 */
-  scoreDelta: number;
-  overallFeedback: string;
-}
-
 export interface SubmitConsentRequest {
   privacy?: boolean;
   unannouncedTraining?: boolean;
@@ -82,29 +42,6 @@ export interface SubmitConsentRequest {
 
 export interface SubmitConsentResponse {
   sessionId: string;
-}
-
-export interface RequestOtpRequest {
-  sessionId: string;
-  phoneNumber: string;
-}
-
-export interface RequestOtpResponse {
-  phoneNumberMasked: string;
-  code: string;
-  sendToNumber: string;
-  expiresInSec: number;
-  resendAvailableInSec: number;
-}
-
-export interface VerifyPhoneRequest {
-  sessionId: string;
-  phoneNumber: string;
-  code: string;
-}
-
-export interface VerifyPhoneResponse {
-  session: Session;
 }
 
 export interface GetSessionResponse {
@@ -154,10 +91,6 @@ export function isReportReady(
   status: ReportStatus | null | undefined,
 ): status is "draft" | "final" {
   return status === "draft" || status === "final";
-}
-
-export interface GetComparisonResponse {
-  result: ComparisonResult;
 }
 
 export interface StartCallResponse {

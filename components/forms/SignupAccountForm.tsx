@@ -1,31 +1,26 @@
 "use client";
 
-import { ConsentFields, consentFieldSchema } from "@/components/forms/ConsentFields";
+import {
+  ConsentFields,
+  consentFieldSchema,
+} from "@/components/forms/ConsentFields";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { newPasswordSchema } from "@/lib/forms";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 const signupAccountSchema = consentFieldSchema.extend({
-  password: z
-    .string()
-    .min(8, "비밀번호는 영문과 숫자를 포함해 8자 이상이어야 합니다.")
-    .max(128, "비밀번호가 너무 깁니다.")
-    .refine((value) => /[A-Za-z]/.test(value) && /\d/.test(value), {
-      message: "비밀번호는 영문과 숫자를 포함해 8자 이상이어야 합니다.",
-    }),
+  password: newPasswordSchema,
 });
 
 type SignupAccountValues = z.infer<typeof signupAccountSchema>;
 
 type SignupAccountFormProps = {
-  onSubmit: (values: {
-    password: string;
-    privacy: boolean;
-    unannouncedTraining: boolean;
-  }) => Promise<void> | void;
+  onSubmit: (values: SignupAccountValues) => Promise<void> | void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
 };
@@ -36,10 +31,10 @@ export function SignupAccountForm({
   errorMessage,
 }: SignupAccountFormProps) {
   const {
+    control,
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<SignupAccountValues>({
     resolver: zodResolver(signupAccountSchema),
@@ -50,25 +45,16 @@ export function SignupAccountForm({
     },
   });
 
-  const privacy = watch("privacy");
-  const unannouncedTraining = watch("unannouncedTraining");
+  const privacy = useWatch({ control, name: "privacy" });
+  const unannouncedTraining = useWatch({ control, name: "unannouncedTraining" });
 
   return (
-    <form
-      onSubmit={handleSubmit((values) =>
-        onSubmit({
-          password: values.password,
-          privacy: values.privacy,
-          unannouncedTraining: values.unannouncedTraining,
-        }),
-      )}
-      className="space-y-5"
-    >
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div>
         <Label htmlFor="password" className="text-text-primary">
           비밀번호
         </Label>
-        <p className="mt-1 text-sm text-text-secondary">
+        <p className="mt-1 text-base text-text-secondary">
           영문과 숫자를 포함해 8자 이상으로 입력해 주세요.
         </p>
         <PasswordInput
@@ -81,11 +67,11 @@ export function SignupAccountForm({
           aria-describedby={errors.password ? "password-error" : undefined}
           {...register("password")}
         />
-        {errors.password ? (
-          <p id="password-error" className="mt-2 text-sm text-destructive">
-            {errors.password.message}
-          </p>
-        ) : null}
+        <FormError
+          id="password-error"
+          message={errors.password?.message}
+          className="mt-2"
+        />
       </div>
 
       <ConsentFields
@@ -104,11 +90,7 @@ export function SignupAccountForm({
         unannouncedError={errors.unannouncedTraining?.message}
       />
 
-      {errorMessage ? (
-        <p className="text-sm text-destructive" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      <FormError message={errorMessage} />
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "가입하는 중..." : "동의하고 가입하기"}
