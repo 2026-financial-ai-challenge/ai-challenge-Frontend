@@ -85,12 +85,30 @@ const STAGES_CONFIG: Record<StageNumber, (prevChoice?: ChoiceKey) => StageData> 
   }),
 };
 
+/** 세 단계 모두 B가 전화를 끊어내는 선택이다. */
+const SAFE_CHOICE: ChoiceKey = "B";
+
 /**
- * 잠금화면 시계·날짜용. 본문 폰트(Noto Sans KR)로 찍으면 실제 기기와 글자
- * 모양이 확연히 다르다. 애플 기기에서는 이 스택이 진짜 SF Pro로 떨어진다.
+ * 결과 화면에서 각 단계를 어떻게 넘겼는지 되짚어 준다. 끝까지 당한 사람과
+ * 끝까지 막아낸 사람이 같은 화면을 보면 체험이 의미를 잃는다.
  */
-const IOS_FONT_STACK =
-  '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Apple SD Gothic Neo", "Helvetica Neue", system-ui, sans-serif';
+const STAGE_REVIEW: Record<StageNumber, { label: string; safe: string; unsafe: string }> = {
+  1: {
+    label: "1단계 · 사건 연루 통보",
+    safe: "소속을 받아 직접 걸겠다고 하셨습니다. 진짜 기관이라면 이 요구를 거절할 이유가 없습니다.",
+    unsafe: "계좌 이야기에 바로 대답하셨습니다. 조직은 이 반응 하나로 본인 확인을 끝냅니다.",
+  },
+  2: {
+    label: "2단계 · 위조 영장 확인",
+    safe: "전화를 끊고 주변과 상의하겠다고 하셨습니다. 혼자 두지 않는 것이 핵심입니다.",
+    unsafe: "사이트에 뜬 사건번호를 사실로 받아들이셨습니다. 그 화면은 조직이 만든 것입니다.",
+  },
+  3: {
+    label: "3단계 · 보안 앱 설치",
+    safe: "설치를 거부하고 끊으셨습니다. 피해는 여기서 멈춥니다.",
+    unsafe: "설치에 동의하셨습니다. 실제였다면 이 순간 전화와 자산이 함께 넘어갑니다.",
+  },
+};
 
 /** 한 글자가 찍히는 간격(ms). */
 const TYPING_INTERVAL_MS = 28;
@@ -99,8 +117,6 @@ const SLIDER_KNOB_PX = 64;
 const SLIDER_GRAB_OFFSET_PX = 28;
 /** 손잡이를 이 비율만큼 밀면 통화를 받는다. */
 const SLIDE_ACCEPT_RATIO = 0.85;
-/** 방향키 한 번에 밀리는 비율. 다섯 번이면 수신 지점을 넘는다. */
-const SLIDE_KEY_STEP_RATIO = 0.2;
 
 /** 폰 프레임의 기준 크기(px). 뷰포트가 좁거나 짧으면 이 비율만큼 통째로 줄인다. */
 const FRAME_WIDTH_PX = 345;
@@ -186,12 +202,11 @@ function IntroExperience() {
   });
   const [callDuration, setCallDuration] = useState(0);
 
-  // 슬라이더 상태. slideX·slideMaxPx는 축소 배율을 적용하지 않은 레이아웃 px이다.
+  // 슬라이더 상태. slideX는 축소 배율을 적용하지 않은 레이아웃 px이다.
   const [slideX, setSlideX] = useState(0);
-  const [slideMaxPx, setSlideMaxPx] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const sliderTrackRef = useRef<HTMLDivElement>(null);
-  const sliderKnobRef = useRef<HTMLButtonElement>(null);
+  const sliderKnobRef = useRef<HTMLDivElement>(null);
 
   // 프레임 축소 배율. 드래그 좌표 환산에도 필요해서 ref로 같이 들고 있다.
   const [frameScale, setFrameScale] = useState(1);
@@ -201,9 +216,6 @@ function IntroExperience() {
 
   const [currentTime, setCurrentTime] = useState<string>("12:04");
   const [currentDateStr, setCurrentDateStr] = useState<string>("9월 27일 (일)");
-
-  const slidePercent =
-    slideMaxPx > 0 ? Math.round((slideX / slideMaxPx) * 100) : 0;
 
   useEffect(() => {
     setIntroActive(true);
@@ -254,6 +266,40 @@ function IntroExperience() {
     const prevChoice = currentStage > 1 ? userChoices[(currentStage - 1) as StageNumber] : undefined;
     return STAGES_CONFIG[currentStage](prevChoice);
   }, [currentStage, userChoices]);
+
+  /** 결과 화면 문구. 어디서 넘어갔는지에 따라 갈라진다. */
+  const verdict = useMemo(() => {
+    const stages: StageNumber[] = [1, 2, 3];
+    const safeCount = stages.filter((n) => userChoices[n] === SAFE_CHOICE).length;
+    // 앱 설치는 되돌릴 수 없는 단계라, 앞을 잘 막았더라도 따로 다룬다.
+    const installedApp = userChoices[3] === "A";
+
+    if (installedApp) {
+      return {
+        safeCount,
+        tone: "danger" as const,
+        title: "마지막에 앱 설치에 동의하셨습니다",
+        summary: "실제 상황이었다면 이 통화에서 피해가 시작됩니다.",
+      };
+    }
+    if (safeCount === stages.length) {
+      return {
+        safeCount,
+        tone: "safe" as const,
+        title: "세 번 다 끊어내셨습니다",
+        summary: "다만 글로 읽을 때와, 일상 중에 갑자기 울리는 전화는 다릅니다.",
+      };
+    }
+    return {
+      safeCount,
+      tone: "warn" as const,
+      title: "중간에 설득당한 지점이 있습니다",
+      summary: "조직은 세 번 중 한 번만 통하면 다음 단계로 넘어갑니다.",
+    };
+  }, [userChoices]);
+
+  /** 1301 설명은 그렇게 답했거나 실제로 앱을 설치한 사람에게만 뜻이 있다. */
+  const showHijackCard = userChoices[1] === SAFE_CHOICE || userChoices[3] === "A";
 
   const handleDismiss = useCallback(() => {
     // 재방문 시 다시 뜨지 않도록 브라우저에 기록한다.
@@ -326,11 +372,6 @@ function IntroExperience() {
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-
-    if (mode === "ringing" && sliderKnobRef.current) {
-      sliderKnobRef.current.focus();
-      return;
-    }
 
     const active = document.activeElement;
     if (!active || !dialog.contains(active)) dialog.focus();
@@ -417,58 +458,6 @@ function IntroExperience() {
     };
   }, [isDragging, handleAcceptCall]);
 
-  // 트랙 폭은 뷰포트에 따라 달라지므로 실제 이동 거리를 측정해 둔다.
-  // offsetWidth는 transform: scale의 영향을 받지 않아 레이아웃 px 그대로다.
-  useEffect(() => {
-    if (mode !== "ringing") return;
-    const track = sliderTrackRef.current;
-    if (!track) return;
-
-    const measure = () =>
-      setSlideMaxPx(Math.max(0, track.offsetWidth - SLIDER_KNOB_PX));
-    measure();
-
-    const observer = new ResizeObserver(measure);
-    observer.observe(track);
-    return () => observer.disconnect();
-  }, [mode]);
-
-  /** 드래그를 못 하는 사용자를 위한 키보드 조작. 방향키로 밀거나 Enter로 바로 받는다. */
-  const handleSliderKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    const step = Math.max(1, slideMaxPx * SLIDE_KEY_STEP_RATIO);
-
-    switch (event.key) {
-      case "ArrowRight":
-      case "ArrowUp": {
-        event.preventDefault();
-        const next = Math.min(slideMaxPx, slideX + step);
-        if (slideMaxPx > 0 && next >= slideMaxPx * SLIDE_ACCEPT_RATIO) {
-          handleAcceptCall();
-        } else {
-          setSlideX(next);
-        }
-        break;
-      }
-      case "ArrowLeft":
-      case "ArrowDown":
-        event.preventDefault();
-        setSlideX((current) => Math.max(0, current - step));
-        break;
-      case "Home":
-        event.preventDefault();
-        setSlideX(0);
-        break;
-      case "End":
-      case "Enter":
-      case " ":
-        event.preventDefault();
-        handleAcceptCall();
-        break;
-      default:
-        break;
-    }
-  };
-
   return (
     <div
       ref={dialogRef}
@@ -509,9 +498,9 @@ function IntroExperience() {
         >
         
           {/* 좌측 물리 버튼 */}
-          <div className="hidden sm:block absolute -left-[7px] top-24 h-7 w-[4px] rounded-l-[3px] bg-zinc-400 shadow-sm" />
-          <div className="hidden sm:block absolute -left-[7px] top-36 h-12 w-[4px] rounded-l-[3px] bg-zinc-400 shadow-sm" />
-          <div className="hidden sm:block absolute -left-[7px] top-52 h-12 w-[4px] rounded-l-[3px] bg-zinc-400 shadow-sm" />
+          <div className="hidden sm:block absolute -left-[7px] top-24 h-7 w-[4px] rounded-l-[3px] bg-zinc-700 shadow-sm" />
+          <div className="hidden sm:block absolute -left-[7px] top-36 h-12 w-[4px] rounded-l-[3px] bg-zinc-700 shadow-sm" />
+          <div className="hidden sm:block absolute -left-[7px] top-52 h-12 w-[4px] rounded-l-[3px] bg-zinc-700 shadow-sm" />
 
           {/* 우측 물리 전원 버튼: 수신 중에만 실제로 거절 동작을 한다. */}
           {mode === "ringing" ? (
@@ -519,20 +508,20 @@ function IntroExperience() {
               type="button"
               onClick={handleDeclineCall}
               aria-label="전원 버튼 눌러 전화 거절하기"
-              className="hidden sm:block absolute -right-[7px] top-36 h-16 w-[4px] rounded-r-[3px] bg-zinc-400 shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="hidden sm:block absolute -right-[7px] top-36 h-16 w-[4px] rounded-r-[3px] bg-zinc-700 shadow-sm hover:brightness-110 active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
             />
           ) : (
             <div
               aria-hidden="true"
-              className="hidden sm:block absolute -right-[7px] top-36 h-16 w-[4px] rounded-r-[3px] bg-zinc-400 shadow-sm"
+              className="hidden sm:block absolute -right-[7px] top-36 h-16 w-[4px] rounded-r-[3px] bg-zinc-700 shadow-sm"
             />
           )}
 
-          {/* 메인 iPhone 디스플레이 바디 (슬림 베젤, 50px 코너 라운드, 티타늄 테두리) */}
-          <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[50px] border-[5px] border-[#38393d] bg-[#1a1b22] text-white shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_25px_65px_-15px_rgba(0,0,0,0.95)] ring-1 ring-black">
+          {/* 메인 iPhone 디스플레이 바디 (슬림 베젤, 50px 코너 라운드) */}
+          <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[50px] border-[5px] border-black bg-[#1a1b22] text-white shadow-[0_0_0_3px_#2a2b30,0_25px_65px_-15px_rgba(0,0,0,0.95)]">
 
-            {/* 수신·거절·통화가 같은 발신자 그림을 쓴다. */}
-            {mode !== "verdict" && <CallerShadow caller={mode !== "declined"} />}
+            {/* 네 화면이 같은 배경을 공유한다. 발신자 그림은 수신·통화에만 올린다. */}
+            <CallerShadow caller={mode === "ringing" || mode === "call"} />
 
             {/* ========================================================= */}
             {/* iOS 상단 상태 표시줄 & Dynamic Island                     */}
@@ -598,7 +587,8 @@ function IntroExperience() {
               <div className="relative z-10 flex flex-1 flex-col justify-between pt-6 pb-4 px-6 animate-in fade-in duration-200 select-none">
                 {/* 상단 발신 정보 */}
                 <div className="text-center pt-5">
-                  <h2 className="text-[33px] font-light tracking-[-0.015em] text-white font-sans leading-none">
+                  {/* 통화 중 화면의 전화번호와 같은 글씨로 맞춘다. */}
+                  <h2 className="text-[33px] font-medium tracking-tight text-white font-sans leading-none">
                     070-5275-3828
                   </h2>
                   <p className="mt-2 text-[16px] font-normal text-zinc-300">
@@ -644,34 +634,25 @@ function IntroExperience() {
                       </span>
                     </div>
 
-                    <button
+                    {/*
+                      밀어서만 받을 수 있다. 키보드로 조작할 수 없으므로 초점을
+                      받지 않는 요소로 둔다. 버튼으로 두면 Tab이 닿는데 Enter가
+                      먹지 않아 막다른 길이 되고, 초점 테두리까지 떠 버린다.
+                    */}
+                    <div
                       ref={sliderKnobRef}
-                      type="button"
-                      role="slider"
-                      aria-label="밀어서 통화 받기"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={slidePercent}
-                      aria-valuetext={`${slidePercent}퍼센트 밀림`}
-                      aria-describedby="intro-slider-hint"
-                      onKeyDown={handleSliderKeyDown}
+                      aria-hidden="true"
                       onMouseDown={handleTouchStart}
                       onTouchStart={handleTouchStart}
                       style={{
                         transform: `translateX(${slideX}px)`,
                         transition: isDragging ? "none" : "transform 0.25s ease-out",
                       }}
-                      className="relative z-10 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-white shadow-[0_3px_10px_rgba(0,0,0,0.35)] active:scale-95 cursor-grab active:cursor-grabbing focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80"
+                      className="relative z-10 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-white shadow-[0_3px_10px_rgba(0,0,0,0.35)] active:scale-95 cursor-grab active:cursor-grabbing"
                     >
                       <PhoneFillIcon className="h-[28px] w-[28px] text-[#34C759]" />
-                    </button>
+                    </div>
                   </div>
-                  <p
-                    id="intro-slider-hint"
-                    className="mt-2 text-center text-[11px] font-normal text-white/60"
-                  >
-                    드래그하거나 방향키 · Enter로도 받을 수 있습니다
-                  </p>
                 </div>
               </div>
             )}
@@ -682,17 +663,15 @@ function IntroExperience() {
             {mode === "declined" && (
               <div className="relative z-10 flex flex-1 flex-col justify-between py-4 px-5 animate-in fade-in duration-200">
                 <div>
-                  {/* 날짜 & 시계. 자물쇠는 실제 기기처럼 Dynamic Island 안에 있다. */}
-                  <div
-                    className="flex flex-col items-center pt-3 text-center"
-                    style={{ fontFamily: IOS_FONT_STACK }}
-                  >
-                    <p className="text-[14px] font-semibold text-white">{currentDateStr}</p>
-                    {/* 숫자만 길쭉한 전용 서체로 찍는다. 날짜는 한글이라 그대로 둔다. */}
-                    <span
-                      className="mt-1 text-[146px] font-extralight leading-[0.78] tracking-[0.01em] text-white/90 tabular-nums"
-                      style={{ fontFamily: "var(--font-lock-clock)" }}
-                    >
+                  {/*
+                    날짜·시계는 통화 중 화면의 경과 시간·전화번호와 같은 글씨를
+                    쓴다. 자물쇠는 실제 기기처럼 Dynamic Island 안에 있다.
+                  */}
+                  <div className="flex flex-col items-center pt-3 text-center">
+                    <p className="text-[16px] font-normal tracking-tight text-white/85 font-sans tabular-nums">
+                      {currentDateStr}
+                    </p>
+                    <span className="mt-1 text-[76px] font-medium tracking-tight leading-none text-white font-sans tabular-nums">
                       {currentTime}
                     </span>
                   </div>
@@ -871,10 +850,10 @@ function IntroExperience() {
             {/* 4. 통화 종료 후 최근 통화 & 경각심 분석 리포트             */}
             {/* ========================================================= */}
             {mode === "verdict" && (
-              <div className="relative z-10 flex flex-1 flex-col justify-between py-2 px-3 animate-in fade-in duration-200 text-left bg-zinc-950 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="relative z-10 flex flex-1 flex-col justify-between py-2 px-3 animate-in fade-in duration-200 text-left overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="pt-1">
                   {/* 상단 최근 통화 헤더 */}
-                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5 mb-3">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
                     <div>
                       <p className="text-sm font-semibold text-[#FF3B30]">
                         070-5275-3828
@@ -887,32 +866,70 @@ function IntroExperience() {
                     </div>
                   </div>
 
-                  <h3 className="text-base font-bold text-white leading-snug">
-                    방금 나눈 대화,
-                    <br />
-                    남의 일처럼 느껴지셨나요?
-                  </h3>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-base font-bold text-white leading-snug">
+                      {verdict.title}
+                    </h3>
+                    <span
+                      className={`mt-0.5 shrink-0 rounded-full px-2 py-[3px] text-[10px] font-bold ${
+                        verdict.tone === "safe"
+                          ? "bg-[#34C759]/15 text-[#34C759]"
+                          : verdict.tone === "warn"
+                            ? "bg-[#FF9500]/15 text-[#FF9500]"
+                            : "bg-[#FF3B30]/15 text-[#FF3B30]"
+                      }`}
+                    >
+                      {verdict.safeCount}/3 차단
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-zinc-400">
+                    {verdict.summary}
+                  </p>
 
-                  <div className="mt-3 rounded-2xl bg-zinc-900 border border-zinc-800 divide-y divide-zinc-800/80 text-xs text-zinc-300">
-                    <div className="p-3">
-                      <p className="font-semibold text-white text-[12px] mb-1">
-                        실제 피싱 조직 3단계 각본의 실체
-                      </p>
-                      <p className="text-zinc-400 text-[11px] leading-relaxed">
-                        사건 연루를 통보해 공포를 준 뒤, 위조된 가짜 포털 영장을 확인시키고, 결국 보안 앱 설치나 자산 진술을 받아냅니다.
-                      </p>
-                    </div>
+                  {/* 단계별로 어떤 선택을 했는지 되짚어 준다. */}
+                  <ul className="mt-2.5 space-y-1.5">
+                    {([1, 2, 3] as StageNumber[]).map((stage) => {
+                      const blocked = userChoices[stage] === SAFE_CHOICE;
+                      return (
+                        <li
+                          key={stage}
+                          className="flex gap-2.5 rounded-2xl border border-white/10 bg-zinc-900/75 px-3 py-2.5 backdrop-blur-xl"
+                        >
+                          <span
+                            className={`mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold leading-none ${
+                              blocked ? "bg-[#34C759] text-black" : "bg-[#FF3B30] text-white"
+                            }`}
+                          >
+                            {blocked ? "✓" : "!"}
+                          </span>
+                          <div>
+                            <p className="text-[12px] font-semibold text-white">
+                              {STAGE_REVIEW[stage].label}
+                            </p>
+                            <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-400">
+                              {blocked
+                                ? STAGE_REVIEW[stage].safe
+                                : STAGE_REVIEW[stage].unsafe}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
 
-                    <div className="p-3">
-                      <p className="font-semibold text-[#FF3B30] text-[12px] mb-1">
-                        &lsquo;직접 1301로 걸어보라&rsquo;고 당당한 이유
-                      </p>
-                      <p className="text-zinc-400 text-[11px] leading-relaxed">
-                        악성 앱이 설치되는 순간 스마트폰이 해킹되어, 이후 112나 1301 어디로 전화를 걸든 피싱 콜센터로 통화가 강제 가로채기됩니다.
-                      </p>
-                    </div>
+                  <div className="mt-1.5 rounded-2xl bg-zinc-900/75 border border-white/10 divide-y divide-white/10 text-xs text-zinc-300 backdrop-blur-xl">
+                    {showHijackCard && (
+                      <div className="px-3 py-2.5">
+                        <p className="font-semibold text-[#FF3B30] text-[12px] mb-1">
+                          직접 1301로 걸어도 안 되는 이유
+                        </p>
+                        <p className="text-zinc-400 text-[11px] leading-relaxed">
+                          악성 앱이 설치되는 순간 휴대전화가 넘어가, 이후 112나 1301 어디로 걸든 통화가 조직의 콜센터로 가로채집니다. 끊고 다른 전화기로 거는 것만이 확실합니다.
+                        </p>
+                      </div>
+                    )}
 
-                    <div className="p-3">
+                    <div className="px-3 py-2.5">
                       <p className="text-zinc-400 text-[11px] leading-relaxed">
                         기관 사칭 전화는 나이나 직업을 가려서 걸려오지 않습니다. 글이나 퀴즈로 볼 때와, 일상 중에 갑자기 울리는 전화는 심장 박동부터 다릅니다.
                       </p>
@@ -921,7 +938,7 @@ function IntroExperience() {
                 </div>
 
                 {/* 하단 iOS 스타일 액션 버튼 */}
-                <div className="space-y-2 pt-3 pb-2">
+                <div className="space-y-1 pt-2 pb-1">
                   <Button
                     type="button"
                     onClick={handleDismiss}
