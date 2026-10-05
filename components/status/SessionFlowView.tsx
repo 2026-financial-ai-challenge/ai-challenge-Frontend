@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { ReportCollection } from "@/components/report/ReportCollection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FormError } from "@/components/ui/form-error";
 import { ApiError, apiErrorMessage } from "@/lib/errors";
 import { OTP_ERROR } from "@/lib/otp";
 import { useSessionStore } from "@/lib/stores/session-store";
@@ -17,13 +18,12 @@ import {
   useStartCallMutation,
 } from "@/hooks/use-training-queries";
 import { isReportReady } from "@/lib/types";
-import type { CallStatus, ReportStatus } from "@/lib/types";
+import type { CallStatus, ReportStatus, Session } from "@/lib/types";
 import { useQueryClient } from "@tanstack/react-query";
 
-const callCopy: Record<
-  CallStatus,
-  { title: string; body: string }
-> = {
+type StatusCopy = { title: string; body: string };
+
+const callCopy: Record<CallStatus, StatusCopy> = {
   waiting: {
     title: "발신 대기",
     body: "보이스피싱 시뮬레이션 전화를 준비 중입니다. 잠시 후 휴대전화로 전화가 갑니다. 방해금지 모드는 꺼 두고, 이 화면에서 통화하지 않습니다.",
@@ -53,7 +53,7 @@ const callCopy: Record<
 function statusCardCopy(
   callStatus: CallStatus,
   reportStatus: ReportStatus | null,
-): { title: string; body: string } {
+): StatusCopy {
   if (callStatus !== "completed") {
     return callCopy[callStatus];
   }
@@ -64,6 +64,15 @@ function statusCardCopy(
     };
   }
   return callCopy.completed;
+}
+
+/** 완료된 세션들 중 이 세션이 몇 번째인지. 목록에 없으면 null. */
+function sessionOrdinal(sessions: Session[], sessionId: string): number | null {
+  const index = sessions
+    .filter((item) => item.reportStatus === "final")
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .findIndex((item) => item.id === sessionId);
+  return index >= 0 ? index + 1 : null;
 }
 
 export function SessionFlowView() {
@@ -85,25 +94,12 @@ export function SessionFlowView() {
   const { data: sessionsData } = useSessionsListQuery(reportStatus === "final");
   const ordinal =
     reportStatus === "final"
-      ? (() => {
-          const index = (sessionsData?.sessions ?? [])
-            .filter((item) => item.reportStatus === "final")
-            .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-            .findIndex((item) => item.id === sessionId);
-          return index >= 0 ? index + 1 : null;
-        })()
+      ? sessionOrdinal(sessionsData?.sessions ?? [], sessionId)
       : null;
 
   const errorMessage =
-    error instanceof ApiError
-      ? error.message
-      : error
-        ? "상태를 불러오지 못했습니다."
-        : reportError instanceof ApiError
-          ? reportError.message
-          : reportError
-            ? "리포트를 불러오지 못했습니다."
-            : null;
+    apiErrorMessage(error, "상태를 불러오지 못했습니다.") ??
+    apiErrorMessage(reportError, "리포트를 불러오지 못했습니다.");
 
   useEffect(() => {
     if (error instanceof ApiError && error.code === OTP_ERROR.SESSION_NOT_FOUND) {
@@ -124,46 +120,30 @@ export function SessionFlowView() {
     }
   }, [data, pathname, router, sessionId]);
 
-  const heading = isReportReady(reportStatus) ? (
-    reportStatus === "final" ? (
-      <>
-        <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
-          Training report
-        </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
-          {ordinal ? `${ordinal}회차 리포트` : "훈련 리포트"}
-        </h1>
+  const isFinal = reportStatus === "final";
+  const heading = (
+    <>
+      <h1 className="text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
+        {isFinal
+          ? (ordinal ? `${ordinal}회차 리포트` : "훈련 리포트")
+          : isReportReady(reportStatus)
+            ? "훈련 리포트"
+            : "훈련 전화 상태"}
+      </h1>
+      {isFinal ? (
         <Link
           href="/dashboard"
           className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
         >
           ← 대시보드로 돌아가기
         </Link>
-      </>
-    ) : (
-      <>
-        <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
-          Training report
+      ) : (
+        <p className="mt-3 text-base leading-6 text-text-primary">
+          {isReportReady(reportStatus)
+            ? "통화가 끝나면 1차 리포트가 먼저 열리고, 최종 분석이 끝나면 같은 화면에서 바뀝니다."
+            : "서버가 알려 주는 상태만 표시합니다. 통화는 휴대전화에서 이루어집니다."}
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
-          훈련 리포트
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-text-primary">
-          통화가 끝나면 1차 리포트가 먼저 열리고, 최종 분석이 끝나면 같은 화면에서 바뀝니다.
-        </p>
-      </>
-    )
-  ) : (
-    <>
-      <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
-        Training status
-      </p>
-      <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary">
-        훈련 전화 상태
-      </h1>
-      <p className="mt-3 text-sm leading-6 text-text-primary">
-        서버가 알려 주는 상태만 표시합니다. 통화는 휴대전화에서 이루어집니다.
-      </p>
+      )}
     </>
   );
 
@@ -171,9 +151,7 @@ export function SessionFlowView() {
     return (
       <div className="mx-auto max-w-2xl px-5 py-12 sm:py-16">
         {heading}
-        <p className="mt-8 text-sm text-destructive" role="alert">
-          {errorMessage}
-        </p>
+        <FormError message={errorMessage} className="mt-8" />
       </div>
     );
   }
@@ -223,20 +201,35 @@ export function SessionFlowView() {
               unannouncedTurns={report?.unannouncedTurns ?? report?.turns ?? []}
             />
           )}
-          {errorMessage ? (
-            <p className="mt-3 text-sm text-destructive">{errorMessage}</p>
-          ) : null}
+          <FormError message={errorMessage} className="mt-3" />
         </div>
       </div>
     );
   }
+
+  const handleRetry = async () => {
+    retryMutation.reset();
+    try {
+      await retryMutation.mutateAsync(sessionId);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.session(sessionId),
+      });
+    } catch {
+      // 오류 문구는 mutation 상태에서 읽는다.
+    }
+  };
 
   const copy = statusCardCopy(callStatus, reportStatus);
   const canRetry =
     callStatus === "missed" ||
     callStatus === "silent" ||
     callStatus === "failed";
-  const retryError = apiErrorMessage(retryMutation.error);
+  const retryError = apiErrorMessage(
+    retryMutation.error,
+    retryMutation.isError
+      ? "다시 전화 걸기에 실패했습니다. 잠시 후 다시 시도해 주세요."
+      : undefined,
+  );
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-12 sm:py-16">
@@ -247,33 +240,15 @@ export function SessionFlowView() {
             {session.phoneNumberMasked}
           </p>
           <h2 className="mt-2 text-xl font-bold text-text-primary">{copy.title}</h2>
-          <p className="mt-2 text-sm leading-6 text-text-primary">{copy.body}</p>
-          {errorMessage ? (
-            <p className="mt-3 text-sm text-destructive">{errorMessage}</p>
-          ) : null}
-          {retryError ? (
-            <p className="mt-3 text-sm text-destructive" role="alert">
-              {retryError}
-            </p>
-          ) : null}
+          <p className="mt-2 text-base leading-6 text-text-primary">{copy.body}</p>
+          <FormError message={errorMessage} className="mt-3" />
+          <FormError message={retryError} className="mt-3" />
           {canRetry ? (
             <Button
               type="button"
               className="mt-5"
               disabled={retryMutation.isPending}
-              onClick={() => {
-                retryMutation.reset();
-                void retryMutation
-                  .mutateAsync(sessionId)
-                  .then(() =>
-                    queryClient.invalidateQueries({
-                      queryKey: queryKeys.session(sessionId),
-                    }),
-                  )
-                  .catch(() => {
-                    // 오류는 mutation error 상태로 보여 준다.
-                  });
-              }}
+              onClick={() => void handleRetry()}
             >
               {retryMutation.isPending ? "다시 거는 중..." : "다시 전화 걸기"}
             </Button>

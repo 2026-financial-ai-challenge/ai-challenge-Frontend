@@ -21,7 +21,7 @@ const PasswordInput = React.forwardRef<
       />
       <button
         type="button"
-        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-2xl text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => setVisible((current) => !current)}
         aria-label={visible ? "비밀번호 숨기기" : "비밀번호 보기"}
         aria-pressed={visible}

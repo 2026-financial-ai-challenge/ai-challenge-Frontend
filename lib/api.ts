@@ -39,8 +39,6 @@ export interface ApiClient {
   getReport(sessionId: string): Promise<GetReportResponse>;
 }
 
-export { ApiError } from "@/lib/errors";
-
 /** 브라우저는 same-origin `/v1`을 호출하고, Next rewrites가 백엔드로 넘긴다. */
 const BASE_URL = "";
 
@@ -77,7 +75,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-const liveApi: ApiClient = {
+export const api: ApiClient = {
   requestSignupOtp(body) {
     return request<RequestSignupOtpResponse>("/v1/auth/signup/otp", {
       method: "POST",
@@ -124,5 +122,3 @@ const liveApi: ApiClient = {
     return request<GetReportResponse>(`/v1/sessions/${sessionId}/report`);
   },
 };
-
-export const api: ApiClient = liveApi;

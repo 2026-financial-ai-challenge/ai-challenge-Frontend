@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
 import { apiErrorMessage } from "@/lib/errors";
 import { hasTrainingConsent, useAuthStore } from "@/lib/stores/auth-store";
@@ -80,15 +81,7 @@ export function StartTrainingAction({
       >
         {startMutation.isPending ? "훈련 준비 중..." : label}
       </Button>
-      {size === "lg" && errorMessage ? (
-        <p className="text-sm text-destructive" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
+      {size === "lg" ? <FormError message={errorMessage} /> : null}
     </div>
   );
-}
-
-export function StartTrainingButton() {
-  return <StartTrainingAction />;
 }
