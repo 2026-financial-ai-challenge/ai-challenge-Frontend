@@ -20,6 +20,8 @@ import {
 import {
   FRAME_HEIGHT_PX,
   FRAME_WIDTH_PX,
+  INTRO_CALLER_NUMBER,
+  INTRO_FAKE_AGENCY,
   SAFE_CHOICE,
   SLIDER_KNOB_PX,
   STAGE_REVIEW,
@@ -464,7 +466,7 @@ function IntroExperience() {
                 <div className="text-center pt-5">
                   {/* 통화 중 화면의 전화번호와 같은 글씨로 맞춘다. */}
                   <h2 className="text-[33px] font-medium tracking-tight text-white font-sans leading-none">
-                    070-5275-3828
+                    {INTRO_CALLER_NUMBER}
                   </h2>
                   <p className="mt-2 text-[16px] font-normal text-zinc-300">
                     대한민국
@@ -571,10 +573,10 @@ function IntroExperience() {
                     </div>
 
                     <p className="mt-2 text-[12px] font-semibold text-white">
-                      070-5275-3828
+                      {INTRO_CALLER_NUMBER}
                     </p>
                     <p className="mt-0.5 text-xs leading-relaxed text-zinc-200">
-                      <strong className="text-rose-400 font-medium">[서울중앙지검]</strong> 귀하의 고의적 전화 불응으로 인하여 긴급 체포영장 청구 및 자산 동결 심의가 착수됩니다. (사건번호 2026-형제-4892호)
+                      <strong className="text-rose-400 font-medium">[{INTRO_FAKE_AGENCY}]</strong> 귀하의 고의적 전화 불응으로 인하여 긴급 체포영장 청구 및 자산 동결 심의가 착수됩니다. (사건번호 2026-형제-4892호)
                     </p>
                     <p className="mt-2 text-[10px] text-right font-medium text-[#34C759]">
                       탭하여 통화 확인하기 →
@@ -626,7 +628,7 @@ function IntroExperience() {
                     {formatCallDuration(callDuration)}
                   </p>
                   <h2 className="text-[26px] font-medium tracking-tight text-white font-sans mt-1 leading-none">
-                    070-5275-3828
+                    {INTRO_CALLER_NUMBER}
                   </h2>
                 </div>
 
@@ -731,7 +733,7 @@ function IntroExperience() {
                   <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
                     <div>
                       <p className="text-sm font-semibold text-[#FF3B30]">
-                        070-5275-3828
+                        {INTRO_CALLER_NUMBER}
                       </p>
                       <p className="text-[11px] text-zinc-400">대한민국 · 발신 종료</p>
                     </div>
@@ -796,7 +798,7 @@ function IntroExperience() {
                     {showHijackCard && (
                       <div className="px-3 py-2.5">
                         <p className="font-semibold text-[#FF3B30] text-[12px] mb-1">
-                          직접 1301로 걸어도 안 되는 이유
+                          직접 대표번호로 걸어도 안 되는 이유
                         </p>
                         <p className="text-zinc-400 text-[11px] leading-relaxed">
                           악성 앱이 설치되는 순간 휴대전화가 넘어가, 이후 112나 1301 어디로 걸든 통화가 조직의 콜센터로 가로채집니다. 끊고 다른 전화기로 거는 것만이 확실합니다.
