@@ -49,19 +49,17 @@ export function ReportCollection({
   return (
     <div>
       {available.length > 1 ? (
-        <div
-          className="mb-10 grid gap-2 rounded-lg border border-border bg-card p-2.5 sm:grid-cols-3 lg:p-3"
-          aria-label="리포트 선택"
-        >
+        // 세 리포트는 같은 훈련의 서로 다른 장이라, 알약 버튼보다 문서 탭처럼 둔다.
+        <div className="mb-6 flex gap-6 border-b border-border" aria-label="리포트 선택">
           {available.map((key) => (
             <button
               key={key}
               type="button"
               onClick={() => setSelected(key)}
-              className={`rounded-lg px-5 py-3 text-sm font-semibold transition-colors lg:text-base ${
+              className={`-mb-px border-b-2 pb-3 text-base font-bold transition-colors ${
                 active === key
-                  ? "bg-primary text-white"
-                  : "text-text-secondary hover:bg-primary-light"
+                  ? "border-primary text-text-primary"
+                  : "border-transparent text-text-secondary hover:text-text-primary"
               }`}
               aria-pressed={active === key}
             >
@@ -74,6 +72,7 @@ export function ReportCollection({
         status={active}
         body={body}
         turns={active === "draft" ? draftTurns : unannouncedTurns}
+        calls={{ announced: draft, unannounced }}
         webTraining={webTraining}
       />
     </div>
