@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
 import { apiErrorMessage } from "@/lib/errors";
-import { hasTrainingConsent, useAuthStore } from "@/lib/stores/auth-store";
+import {
+  hasTrainingConsent,
+  selectIsAuthenticated,
+  useAuthStore,
+} from "@/lib/stores/auth-store";
 import { useSessionStore } from "@/lib/stores/session-store";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -24,7 +28,7 @@ export function StartTrainingAction({
 }: StartTrainingActionProps) {
   const router = useRouter();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const token = useAuthStore((state) => state.token);
+  const authenticated = useAuthStore(selectIsAuthenticated);
   const alreadyConsented = useAuthStore(hasTrainingConsent);
   const markConsented = useAuthStore((state) => state.markConsented);
   const setSessionId = useSessionStore((state) => state.setSessionId);
@@ -40,7 +44,7 @@ export function StartTrainingAction({
     );
   }
 
-  if (!token) {
+  if (!authenticated) {
     return (
       <Button asChild size={size} className={className}>
         <Link href="/login?next=/dashboard">{label}</Link>

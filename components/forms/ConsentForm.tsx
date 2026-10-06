@@ -9,12 +9,8 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { useRequireAuth } from "@/hooks/use-auth-redirect";
 import { useSubmitConsentMutation } from "@/hooks/use-training-queries";
-import { ApiError, apiErrorMessage } from "@/lib/errors";
-import {
-  hasTrainingConsent,
-  replaceTo,
-  useAuthStore,
-} from "@/lib/stores/auth-store";
+import { apiErrorMessage } from "@/lib/errors";
+import { hasTrainingConsent, useAuthStore } from "@/lib/stores/auth-store";
 import { useSessionStore } from "@/lib/stores/session-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -47,7 +43,6 @@ export function ConsentForm() {
   const setSessionId = useSessionStore((state) => state.setSessionId);
   const alreadyConsented = useAuthStore(hasTrainingConsent);
   const markConsented = useAuthStore((state) => state.markConsented);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
   const consentMutation = useSubmitConsentMutation();
 
   const {
@@ -69,11 +64,8 @@ export function ConsentForm() {
       setSessionId(sessionId);
       markConsented();
       router.push(`/status/${sessionId}`);
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        clearAuth();
-        replaceTo("/login?next=/consent");
-      }
+    } catch {
+      // 401은 api 레이어에서 로그인으로 보낸다. 그 외 오류는 mutation 상태에서 읽는다.
     }
   };
 

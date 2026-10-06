@@ -8,6 +8,11 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import {
+  nextReportPoll,
+  nextSessionPoll,
+  REPORT_WAIT_LIMIT_MS,
+} from "@/lib/session-polling";
 import { isReportReady } from "@/lib/types";
 import type {
   LoginRequest,
@@ -25,14 +30,6 @@ export const queryKeys = {
     ["report", sessionId, reportStatus] as const,
   sessions: ["sessions"] as const,
 };
-
-/** 녹음 전사 기반 최종 리포트는 통화 종료 후 몇 분 뒤에 올 수 있다. */
-const REPORT_WAIT_LIMIT_MS = 10 * 60_000;
-
-function reportWaitElapsed(session: Session, fallbackStart: number): number {
-  const updated = Date.parse(session.updatedAt);
-  return Date.now() - (Number.isFinite(updated) ? updated : fallbackStart);
-}
 
 /** 통화는 끝났는데 리포트가 오지 않은 채 자동 확인 시간이 지났는지. */
 export function useReportWaitExpired(session: Session | undefined): boolean {
@@ -154,39 +151,15 @@ export function useSessionQuery(sessionId: string | undefined) {
     refetchOnReconnect: false,
     refetchIntervalInBackground: false,
     refetchInterval: (query) => {
-      if (startedAtRef.current === null) {
-        startedAtRef.current = Date.now();
-      }
-      const session = query.state.data?.session;
-      if (!session?.callStatus) return false;
-      if (
-        session.callStatus !== lastStatusRef.current &&
-        (session.callStatus === "waiting" || session.callStatus === "calling")
-      ) {
-        startedAtRef.current = Date.now();
-      }
-      lastStatusRef.current = session.callStatus;
-      if (
-        session.callStatus === "missed" ||
-        session.callStatus === "silent" ||
-        session.callStatus === "failed"
-      ) {
-        return false;
-      }
-      if (
-        session.reportStatus === "draft" ||
-        session.reportStatus === "final" ||
-        session.reportStatus === "failed"
-      ) {
-        return false;
-      }
-      if (session.callStatus === "completed") {
-        const waited = reportWaitElapsed(session, startedAtRef.current);
-        if (waited > REPORT_WAIT_LIMIT_MS) return false;
-        return waited > 60_000 ? 10_000 : 3000;
-      }
-      if (Date.now() - startedAtRef.current > 180_000) return false;
-      return 3000;
+      const next = nextSessionPoll({
+        now: Date.now(),
+        startedAt: startedAtRef.current,
+        lastStatus: lastStatusRef.current,
+        session: query.state.data?.session,
+      });
+      startedAtRef.current = next.startedAt;
+      lastStatusRef.current = next.lastStatus;
+      return next.interval;
     },
   });
 }
@@ -207,10 +180,7 @@ export function useReportQuery(
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchIntervalInBackground: false,
-    refetchInterval: (query) => {
-      if (query.state.data?.status === "final") return false;
-      if (!ready) return false;
-      return 15_000;
-    },
+    refetchInterval: (query) =>
+      nextReportPoll(query.state.data?.status, ready),
   });
 }
