@@ -7,8 +7,13 @@ import type { AuthParticipant } from "@/lib/types";
 type AuthState = {
   token: string | null;
   participant: AuthParticipant | null;
+  expiresAt: number | null;
   hasHydrated: boolean;
-  setAuth: (token: string, participant: AuthParticipant) => void;
+  setAuth: (
+    token: string,
+    participant: AuthParticipant,
+    expiresInSec: number,
+  ) => void;
   markConsented: () => void;
   clearAuth: () => void;
   setHasHydrated: (hasHydrated: boolean) => void;
@@ -27,13 +32,31 @@ function normalizeParticipant(
   };
 }
 
+export function isTokenExpired(expiresAt: number | null | undefined): boolean {
+  if (expiresAt == null) return false;
+  return Date.now() >= expiresAt;
+}
+
+export function selectIsAuthenticated(state: {
+  token: string | null;
+  expiresAt: number | null;
+}): boolean {
+  return Boolean(state.token) && !isTokenExpired(state.expiresAt);
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
       participant: null,
+      expiresAt: null,
       hasHydrated: false,
-      setAuth: (token, participant) => set({ token, participant }),
+      setAuth: (token, participant, expiresInSec) =>
+        set({
+          token,
+          participant,
+          expiresAt: Date.now() + expiresInSec * 1000,
+        }),
       markConsented: () =>
         set((state) => {
           if (state.participant == null || state.participant.hasConsented) {
@@ -43,7 +66,8 @@ export const useAuthStore = create<AuthState>()(
             participant: { ...state.participant, hasConsented: true },
           };
         }),
-      clearAuth: () => set({ token: null, participant: null }),
+      clearAuth: () =>
+        set({ token: null, participant: null, expiresAt: null }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
     {
@@ -65,20 +89,29 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         token: state.token,
         participant: state.participant,
+        expiresAt: state.expiresAt,
       }),
       merge: (persistedState, currentState) => {
         const persisted = (persistedState ?? {}) as {
           token?: string | null;
           participant?: (AuthParticipant & { hasConsented?: boolean }) | null;
           consentedParticipantIds?: number[];
+          expiresAt?: number | null;
         };
+        const expiresAt =
+          typeof persisted.expiresAt === "number" ? persisted.expiresAt : null;
+        const token = persisted.token ?? null;
         return {
           ...currentState,
-          token: persisted.token ?? null,
-          participant: normalizeParticipant(
-            persisted.participant,
-            persisted.consentedParticipantIds,
-          ),
+          token: token && isTokenExpired(expiresAt) ? null : token,
+          participant:
+            token && isTokenExpired(expiresAt)
+              ? null
+              : normalizeParticipant(
+                  persisted.participant,
+                  persisted.consentedParticipantIds,
+                ),
+          expiresAt: token && isTokenExpired(expiresAt) ? null : expiresAt,
         };
       },
       onRehydrateStorage: () => (state) => {
@@ -90,7 +123,9 @@ export const useAuthStore = create<AuthState>()(
 
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
-  return useAuthStore.getState().token;
+  const { token, expiresAt } = useAuthStore.getState();
+  if (!token || isTokenExpired(expiresAt)) return null;
+  return token;
 }
 
 export function hasTrainingConsent(state: {

@@ -4,10 +4,8 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { OTP_ERROR } from "@/lib/otp";
+import { isOtpConfirmBlocked, OTP_CODE_LENGTH, OTP_ERROR } from "@/lib/otp";
 import { useEffect, useState } from "react";
-
-const CODE_LENGTH = 6;
 
 type OtpCodeFormProps = {
   phoneNumberMasked: string;
@@ -59,11 +57,11 @@ export function OtpCodeForm({
   const { expiresInSec, resendInSec } = useCountdowns(expiresAt, resendAt);
 
   const expired = expiresInSec === 0;
-  const confirmBlocked =
-    expired ||
-    code.length !== CODE_LENGTH ||
-    errorCode === OTP_ERROR.OTP_LOCKED ||
-    errorCode === OTP_ERROR.OTP_NOT_REQUESTED;
+  const confirmBlocked = isOtpConfirmBlocked({
+    expired,
+    codeLength: code.length,
+    errorCode,
+  });
   const resendBlocked =
     isResending || resendInSec > 0 || errorCode === OTP_ERROR.OTP_RATE_LIMITED;
 
@@ -109,12 +107,12 @@ export function OtpCodeForm({
           inputMode="numeric"
           autoComplete="one-time-code"
           autoFocus
-          maxLength={CODE_LENGTH}
+          maxLength={OTP_CODE_LENGTH}
           placeholder="000000"
           className="mt-3 text-center text-2xl font-bold tracking-[0.35em]"
           value={code}
           onChange={(event) =>
-            setCode(event.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))
+            setCode(event.target.value.replace(/\D/g, "").slice(0, OTP_CODE_LENGTH))
           }
           aria-invalid={errorMessage ? "true" : "false"}
         />

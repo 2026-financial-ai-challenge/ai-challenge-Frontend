@@ -17,114 +17,30 @@ import {
   SpeakerWave3FillIcon,
   VideoFillIcon,
 } from "@/components/landing/IosIcons";
+import {
+  FRAME_HEIGHT_PX,
+  FRAME_WIDTH_PX,
+  SAFE_CHOICE,
+  SLIDER_KNOB_PX,
+  STAGE_REVIEW,
+  TYPING_INTERVAL_MS,
+  buildVerdict,
+  computeFrameScale,
+  computeSlideX,
+  emptyChoices,
+  formatCallDuration,
+  nextAfterChoice,
+  shouldAcceptSlide,
+  shouldShowHijackCard,
+  stageData,
+  type ChoiceKey,
+  type StageNumber,
+  type UserChoices,
+} from "@/lib/intro";
 import { ArrowRight, Info, RotateCcw, X } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type IntroMode = "ringing" | "call" | "declined" | "verdict";
-type StageNumber = 1 | 2 | 3;
-type ChoiceKey = "A" | "B";
-
-interface StageData {
-  stageNumber: StageNumber;
-  script: string;
-  choices: {
-    key: ChoiceKey;
-    text: string;
-  }[];
-}
-
-const STAGES_CONFIG: Record<StageNumber, (prevChoice?: ChoiceKey) => StageData> = {
-  1: () => ({
-    stageNumber: 1,
-    script:
-      "서울중앙지검 금융범죄수사1부 이진우 수사관입니다. 김영수 씨 되십니까? 본인 명의로 개설된 계좌가 자금세탁 사기 사건에 쓰여서 연락드렸습니다. 직접 개설하신 계좌 맞습니까?",
-    choices: [
-      {
-        key: "A",
-        text: "제가 만든 통장이 아닌데요? 무슨 일이죠?",
-      },
-      {
-        key: "B",
-        text: "의심스러운데요. 소속 남겨주시면 제가 1301로 직접 다시 걸겠습니다.",
-      },
-    ],
-  }),
-  2: (prevChoice) => ({
-    stageNumber: 2,
-    script:
-      prevChoice === "B"
-        ? "선생님, 지금 장난 전화 아닙니다. 공무집행 중 끊으시면 출석 기피로 간주되어 바로 체포영장 청구됩니다. 대검찰청 사이트에서 사건번호 2026-형제-4892호 직접 조회해보십시오."
-        : "명의도용 피해를 입증하셔야 혐의를 벗습니다. 지금 대검찰청 사이트 들어가셔서 사건번호 2026-형제-4892호 조회해보십시오. 본인 이름으로 출석요구서 올라와 있습니다.",
-    choices: [
-      {
-        key: "A",
-        text: "진짜 제 이름으로 사건이 떠 있네요... 제가 어떻게 해야 합니까?",
-      },
-      {
-        key: "B",
-        text: "공문이 있어도 전화를 끊고 가족이나 변호사와 먼저 상의하겠습니다.",
-      },
-    ],
-  }),
-  3: (prevChoice) => ({
-    stageNumber: 3,
-    script:
-      prevChoice === "B"
-        ? "수사 기밀이라 외부로 발설하시면 공범으로 즉시 긴급체포 대상입니다. 결백을 입증하시려면 지금 보내드리는 보안 인증 앱 설치하고 휴대전화 검사부터 받으십시오."
-        : "금융보안원 원격 검사로 자산 동결을 막아야 합니다. 지금 문자로 보내드리는 보안 앱 설치하시고 화면 유지하십시오.",
-    choices: [
-      {
-        key: "A",
-        text: "공범으로 몰리는 건 무서우니까... 일단 앱 설치하겠습니다.",
-      },
-      {
-        key: "B",
-        text: "전화로 앱 설치를 요구하는 건 사기입니다. 끊겠습니다.",
-      },
-    ],
-  }),
-};
-
-/** 세 단계 모두 B가 전화를 끊어내는 선택이다. */
-const SAFE_CHOICE: ChoiceKey = "B";
-
-/**
- * 결과 화면에서 각 단계를 어떻게 넘겼는지 되짚어 준다. 끝까지 당한 사람과
- * 끝까지 막아낸 사람이 같은 화면을 보면 체험이 의미를 잃는다.
- */
-const STAGE_REVIEW: Record<StageNumber, { label: string; safe: string; unsafe: string }> = {
-  1: {
-    label: "1단계 · 사건 연루 통보",
-    safe: "소속을 받아 직접 걸겠다고 하셨습니다. 진짜 기관이라면 이 요구를 거절할 이유가 없습니다.",
-    unsafe: "계좌 이야기에 바로 대답하셨습니다. 조직은 이 반응 하나로 본인 확인을 끝냅니다.",
-  },
-  2: {
-    label: "2단계 · 위조 영장 확인",
-    safe: "전화를 끊고 주변과 상의하겠다고 하셨습니다. 혼자 두지 않는 것이 핵심입니다.",
-    unsafe: "사이트에 뜬 사건번호를 사실로 받아들이셨습니다. 그 화면은 조직이 만든 것입니다.",
-  },
-  3: {
-    label: "3단계 · 보안 앱 설치",
-    safe: "설치를 거부하고 끊으셨습니다. 피해는 여기서 멈춥니다.",
-    unsafe: "설치에 동의하셨습니다. 실제였다면 이 순간 전화와 자산이 함께 넘어갑니다.",
-  },
-};
-
-/** 한 글자가 찍히는 간격(ms). */
-const TYPING_INTERVAL_MS = 28;
-/** 밀어서 받기 슬라이더 손잡이 너비(px)와 커서 보정값. */
-const SLIDER_KNOB_PX = 64;
-const SLIDER_GRAB_OFFSET_PX = 28;
-/** 손잡이를 이 비율만큼 밀면 통화를 받는다. */
-const SLIDE_ACCEPT_RATIO = 0.85;
-
-/** 폰 프레임의 기준 크기(px). 뷰포트가 좁거나 짧으면 이 비율만큼 통째로 줄인다. */
-const FRAME_WIDTH_PX = 345;
-const FRAME_HEIGHT_PX = 690;
-/** 프레임 주변(오버레이 패딩·측면 버튼)에 남겨 둘 여백(px). */
-const FRAME_MARGIN_PX = 32;
-/** 이보다 더 줄이면 글자를 읽을 수 없으므로, 축소 대신 스크롤로 넘긴다. */
-const MIN_FRAME_SCALE = 0.55;
 
 /** 초점을 모달 안에 가둘 때 훑는 요소들. */
 const FOCUSABLE_SELECTOR =
@@ -173,12 +89,6 @@ function TypedScript({ script }: { script: string }) {
   );
 }
 
-function formatCallDuration(totalSeconds: number) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-}
-
 export function IntroSequence() {
   const introHydrated = useIntroHydrated();
   const introSeen = useIntroStore((state) => state.seen);
@@ -195,11 +105,7 @@ function IntroExperience() {
   const markIntroSeen = useIntroStore((state) => state.markSeen);
   const [mode, setMode] = useState<IntroMode>("ringing");
   const [currentStage, setCurrentStage] = useState<StageNumber>(1);
-  const [userChoices, setUserChoices] = useState<Record<StageNumber, ChoiceKey | undefined>>({
-    1: undefined,
-    2: undefined,
-    3: undefined,
-  });
+  const [userChoices, setUserChoices] = useState<UserChoices>(emptyChoices);
   const [callDuration, setCallDuration] = useState(0);
 
   // 슬라이더 상태. slideX는 축소 배율을 적용하지 않은 레이아웃 px이다.
@@ -264,42 +170,11 @@ function IntroExperience() {
   // 현재 스테이지 대사 데이터
   const currentStageConfig = useMemo(() => {
     const prevChoice = currentStage > 1 ? userChoices[(currentStage - 1) as StageNumber] : undefined;
-    return STAGES_CONFIG[currentStage](prevChoice);
+    return stageData(currentStage, prevChoice);
   }, [currentStage, userChoices]);
 
-  /** 결과 화면 문구. 어디서 넘어갔는지에 따라 갈라진다. */
-  const verdict = useMemo(() => {
-    const stages: StageNumber[] = [1, 2, 3];
-    const safeCount = stages.filter((n) => userChoices[n] === SAFE_CHOICE).length;
-    // 앱 설치는 되돌릴 수 없는 단계라, 앞을 잘 막았더라도 따로 다룬다.
-    const installedApp = userChoices[3] === "A";
-
-    if (installedApp) {
-      return {
-        safeCount,
-        tone: "danger" as const,
-        title: "마지막에 앱 설치에 동의하셨습니다",
-        summary: "실제 상황이었다면 이 통화에서 피해가 시작됩니다.",
-      };
-    }
-    if (safeCount === stages.length) {
-      return {
-        safeCount,
-        tone: "safe" as const,
-        title: "세 번 다 끊어내셨습니다",
-        summary: "다만 글로 읽을 때와, 일상 중에 갑자기 울리는 전화는 다릅니다.",
-      };
-    }
-    return {
-      safeCount,
-      tone: "warn" as const,
-      title: "중간에 설득당한 지점이 있습니다",
-      summary: "조직은 세 번 중 한 번만 통하면 다음 단계로 넘어갑니다.",
-    };
-  }, [userChoices]);
-
-  /** 1301 설명은 그렇게 답했거나 실제로 앱을 설치한 사람에게만 뜻이 있다. */
-  const showHijackCard = userChoices[1] === SAFE_CHOICE || userChoices[3] === "A";
+  const verdict = useMemo(() => buildVerdict(userChoices), [userChoices]);
+  const showHijackCard = shouldShowHijackCard(userChoices);
 
   const handleDismiss = useCallback(() => {
     // 재방문 시 다시 뜨지 않도록 브라우저에 기록한다.
@@ -319,9 +194,7 @@ function IntroExperience() {
   // 뷰포트가 프레임보다 짧거나 좁으면 잘리지 않게 프레임 전체를 축소한다.
   useEffect(() => {
     const updateScale = () => {
-      const byHeight = (window.innerHeight - FRAME_MARGIN_PX) / FRAME_HEIGHT_PX;
-      const byWidth = (window.innerWidth - FRAME_MARGIN_PX) / FRAME_WIDTH_PX;
-      const next = Math.max(MIN_FRAME_SCALE, Math.min(1, byHeight, byWidth));
+      const next = computeFrameScale(window.innerWidth, window.innerHeight);
       frameScaleRef.current = next;
       setFrameScale(next);
     };
@@ -394,17 +267,18 @@ function IntroExperience() {
       [currentStage]: choice,
     }));
 
-    if (currentStage < 3) {
-      setCurrentStage((prev) => (prev + 1) as StageNumber);
-    } else {
+    const next = nextAfterChoice(currentStage);
+    if (next.mode === "verdict") {
       setMode("verdict");
+    } else {
+      setCurrentStage(next.stage);
     }
   };
 
   const handleReset = () => {
     setMode("ringing");
     setCurrentStage(1);
-    setUserChoices({ 1: undefined, 2: undefined, 3: undefined });
+    setUserChoices(emptyChoices());
     setCallDuration(0);
     setSlideX(0);
   };
@@ -427,14 +301,15 @@ function IntroExperience() {
         "touches" in event ? event.touches[0].clientX : event.clientX;
       // rect는 축소 배율이 곱해진 화면 px이라, 레이아웃 px로 되돌려 계산한다.
       const maxSlide = track.offsetWidth - SLIDER_KNOB_PX;
-      const pointerX = (clientX - rect.left) / (frameScaleRef.current || 1);
-      const slide = Math.max(
-        0,
-        Math.min(pointerX - SLIDER_GRAB_OFFSET_PX, maxSlide),
-      );
+      const slide = computeSlideX({
+        clientX,
+        trackLeft: rect.left,
+        frameScale: frameScaleRef.current || 1,
+        maxSlide,
+      });
       setSlideX(slide);
 
-      if (slide >= maxSlide * SLIDE_ACCEPT_RATIO) {
+      if (shouldAcceptSlide(slide, maxSlide)) {
         setIsDragging(false);
         handleAcceptCall();
       }

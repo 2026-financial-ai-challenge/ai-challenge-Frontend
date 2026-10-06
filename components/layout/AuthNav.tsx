@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { selectIsAuthenticated, useAuthStore } from "@/lib/stores/auth-store";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -9,7 +9,7 @@ export function AuthNav() {
   const router = useRouter();
   const pathname = usePathname();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const token = useAuthStore((state) => state.token);
+  const authenticated = useAuthStore(selectIsAuthenticated);
   const participant = useAuthStore((state) => state.participant);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const onLoginPage = pathname === "/login";
@@ -19,7 +19,7 @@ export function AuthNav() {
     return <div className="h-9 w-24" aria-hidden />;
   }
 
-  if (token && participant) {
+  if (authenticated && participant) {
     return (
       <div className="flex items-center gap-2">
         <p className="hidden text-xs text-text-secondary sm:block">

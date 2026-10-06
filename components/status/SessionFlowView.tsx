@@ -7,6 +7,7 @@ import { ReportCollection } from "@/components/report/ReportCollection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormError } from "@/components/ui/form-error";
+import { useRequireAuth } from "@/hooks/use-auth-redirect";
 import { ApiError, apiErrorMessage } from "@/lib/errors";
 import { OTP_ERROR } from "@/lib/otp";
 import { useSessionStore } from "@/lib/stores/session-store";
@@ -79,19 +80,24 @@ export function SessionFlowView() {
   const params = useParams<{ sessionId: string }>();
   const sessionId = params.sessionId;
   const pathname = usePathname();
+  const isAuthenticated = useRequireAuth(pathname || "/dashboard");
   const router = useRouter();
   const queryClient = useQueryClient();
   const setSessionId = useSessionStore((state) => state.setSessionId);
-  const { data, error, isLoading } = useSessionQuery(sessionId);
+  const { data, error, isLoading } = useSessionQuery(
+    isAuthenticated ? sessionId : undefined,
+  );
   const retryMutation = useStartCallMutation();
   const reportStatus = data?.session.reportStatus ?? null;
   const {
     data: report,
     error: reportError,
     isLoading: reportLoading,
-  } = useReportQuery(sessionId, reportStatus);
+  } = useReportQuery(isAuthenticated ? sessionId : undefined, reportStatus);
 
-  const { data: sessionsData } = useSessionsListQuery(reportStatus === "final");
+  const { data: sessionsData } = useSessionsListQuery(
+    isAuthenticated && reportStatus === "final",
+  );
   const ordinal =
     reportStatus === "final"
       ? sessionOrdinal(sessionsData?.sessions ?? [], sessionId)
@@ -146,6 +152,18 @@ export function SessionFlowView() {
       )}
     </>
   );
+
+  if (!isAuthenticated) {
+    return (
+      <div className="mx-auto max-w-2xl px-5 py-12 sm:py-16">
+        <div className="animate-pulse space-y-6" role="status">
+          <span className="sr-only">로그인 상태를 확인하고 있습니다...</span>
+          <div className="h-8 w-40 rounded bg-primary-light" />
+          <div className="h-40 w-full rounded-lg border border-border bg-card" />
+        </div>
+      </div>
+    );
+  }
 
   if (errorMessage && !data && !report) {
     return (

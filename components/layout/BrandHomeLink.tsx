@@ -1,15 +1,15 @@
 "use client";
 
 import { BrandImage } from "@/components/brand/BrandImage";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { selectIsAuthenticated, useAuthStore } from "@/lib/stores/auth-store";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export function BrandHomeLink() {
   const pathname = usePathname();
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const token = useAuthStore((state) => state.token);
-  const href = hasHydrated && token ? "/dashboard" : "/";
+  const authenticated = useAuthStore(selectIsAuthenticated);
+  const href = hasHydrated && authenticated ? "/dashboard" : "/";
   const isCurrent = pathname === href;
 
   return (
