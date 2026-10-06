@@ -6,35 +6,43 @@ import {
   portalHref,
 } from "@/lib/portal";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 const nav = [
-  { href: portalHref("/notice"), label: "민원안내" },
-  { href: "/#online-minwon", label: "온라인민원" },
-  { href: portalHref("/inquiry"), label: "나의 사건 조회" },
-  { href: portalHref("/notice"), label: "정보공개" },
-  { href: portalHref("/notice"), label: "알림마당" },
+  { path: "/notice", label: "민원안내" },
+  { path: "/#online-minwon", label: "온라인민원" },
+  { path: "/inquiry", label: "나의 사건 조회" },
+  { path: "/notice", label: "정보공개" },
+  { path: "/notice", label: "알림마당" },
 ];
 
 export function PortalChrome({
   children,
   active,
+  hrefFor = portalHref,
+  utility,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   active?: string;
+  /** 포털 내부 경로를 실제 링크로 바꾼다. 훈련 링크에서는 토큰 경로 안에 머문다. */
+  hrefFor?: (path: string) => string;
+  utility?: ReactNode;
 }) {
   return (
     <div className="portal-root min-h-screen bg-[#e8eef4] text-[#1a2433]">
       <div className="bg-[#0b2a4a] text-[12px] text-white/80">
         <div className="mx-auto flex max-w-[1080px] items-center justify-between px-4 py-1.5">
           <p>{PORTAL_AGENCY} 지정 열람창구</p>
-          <p className="hidden sm:block">본인 확인 후 등기송달 사건을 열람할 수 있습니다</p>
+          {utility ?? (
+            <p className="hidden sm:block">본인 확인 후 등기송달 사건을 열람할 수 있습니다</p>
+          )}
         </div>
       </div>
 
       <header className="bg-[#123056] text-white">
         <div className="mx-auto flex max-w-[1080px] items-center justify-between gap-4 px-4 py-4">
           <Link
-            href={portalHref()}
+            href={hrefFor("/")}
             className="flex min-h-11 items-center gap-3 text-white"
           >
             <PortalMark className="h-12 w-12 shrink-0" />
@@ -48,7 +56,7 @@ export function PortalChrome({
             </span>
           </Link>
           <Link
-            href={portalHref("/verify")}
+            href={hrefFor("/verify")}
             className="inline-flex min-h-11 items-center border border-white/40 px-3 text-sm font-semibold text-white hover:bg-white/10"
           >
             본인인증
@@ -63,7 +71,7 @@ export function PortalChrome({
             return (
               <li key={item.label} className="shrink-0">
                 <Link
-                  href={item.href}
+                  href={hrefFor(item.path)}
                   className={`inline-flex min-h-12 items-center px-4 text-sm font-semibold sm:px-6 ${
                     isActive
                       ? "bg-[#0f2b4d] text-white"

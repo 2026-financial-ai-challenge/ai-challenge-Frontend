@@ -1,5 +1,6 @@
 import {
   authResponseSchema,
+  createWebTrainingLinkResponseSchema,
   getReportResponseSchema,
   getSessionResponseSchema,
   listSessionsResponseSchema,
@@ -17,6 +18,7 @@ import { ApiError } from "@/lib/errors";
 import { getAuthToken } from "@/lib/stores/auth-store";
 import type {
   AuthResponse,
+  CreateWebTrainingLinkResponse,
   GetReportResponse,
   GetSessionResponse,
   ListSessionsResponse,
@@ -29,6 +31,7 @@ import type {
   SubmitConsentResponse,
   VerifySignupOtpRequest,
   VerifySignupOtpResponse,
+  WebTrainingEventType,
 } from "@/lib/types";
 import type { ZodTypeAny } from "zod";
 
@@ -42,6 +45,9 @@ import type { ZodTypeAny } from "zod";
  * GET  /v1/sessions  — Bearer 필수. 로그인한 계정 소유 세션 전체 목록
  * GET  /v1/sessions/:sessionId
  * GET  /v1/sessions/:sessionId/report
+ * POST /v1/web-training/sessions/:sessionId/link  — Bearer 필수. 웹 훈련 링크 토큰 발급
+ * GET  /v1/web-training/:token  — 링크 유효성 확인 (만료 410, 없음 404)
+ * POST /v1/web-training/:token/events  — { eventType } 만 보낸다 → 204
  */
 export interface ApiClient {
   requestSignupOtp(body: RequestSignupOtpRequest): Promise<RequestSignupOtpResponse>;
@@ -53,6 +59,9 @@ export interface ApiClient {
   listSessions(): Promise<ListSessionsResponse>;
   getSession(sessionId: string): Promise<GetSessionResponse>;
   getReport(sessionId: string): Promise<GetReportResponse>;
+  createWebTrainingLink(sessionId: string): Promise<CreateWebTrainingLinkResponse>;
+  checkWebTrainingLink(token: string): Promise<void>;
+  sendWebTrainingEvent(token: string, eventType: WebTrainingEventType): void;
 }
 
 /** 브라우저는 same-origin `/v1`을 호출하고, Next rewrites가 백엔드로 넘긴다. */
@@ -71,11 +80,8 @@ function parseBody<T>(schema: ZodTypeAny, data: unknown): T {
   return parsed.data as T;
 }
 
-async function request<T>(
-  path: string,
-  schema: ZodTypeAny,
-  init?: RequestInit,
-): Promise<T> {
+/** 본문을 파싱하지 않는 호출(204 등)도 있으므로 Response를 그대로 돌려준다. */
+async function send(path: string, init?: RequestInit): Promise<Response> {
   if (expireAuthIfNeeded() && !isPublicAuthPath(path)) {
     handleUnauthorized();
     throw new ApiError("로그인이 만료되었습니다. 다시 로그인해 주세요.", 401);
@@ -109,6 +115,15 @@ async function request<T>(
     throw new ApiError(message, res.status, code);
   }
 
+  return res;
+}
+
+async function request<T>(
+  path: string,
+  schema: ZodTypeAny,
+  init?: RequestInit,
+): Promise<T> {
+  const res = await send(path, init);
   return parseBody(schema, await res.json());
 }
 
@@ -182,5 +197,24 @@ export const api: ApiClient = {
       `/v1/sessions/${sessionId}/report`,
       getReportResponseSchema,
     );
+  },
+  createWebTrainingLink(sessionId) {
+    return request<CreateWebTrainingLinkResponse>(
+      `/v1/web-training/sessions/${encodeURIComponent(sessionId)}/link`,
+      createWebTrainingLinkResponseSchema,
+      { method: "POST", body: "{}" },
+    );
+  },
+  async checkWebTrainingLink(token) {
+    await send(`/v1/web-training/${encodeURIComponent(token)}`);
+  },
+  sendWebTrainingEvent(token, eventType) {
+    // keepalive: 페이지를 떠나는 순간(pagehide)에도 요청이 끝까지 전송되어야 한다.
+    void fetch(`${BASE_URL}/v1/web-training/${encodeURIComponent(token)}/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType }),
+      keepalive: true,
+    }).catch(() => undefined);
   },
 };

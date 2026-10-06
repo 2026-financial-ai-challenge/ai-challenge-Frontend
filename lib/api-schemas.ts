@@ -120,3 +120,7 @@ export const getReportResponseSchema = z.object({
   final: callReportSchema.nullable().default(null),
   clawopsSummary: z.unknown().optional(),
 });
+
+export const createWebTrainingLinkResponseSchema = z.object({
+  token: z.string(),
+});

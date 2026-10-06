@@ -34,6 +34,21 @@ describe("resolveAppRequest", () => {
     });
   });
 
+  it("포털의 웹 훈련 링크는 /cs 아래로 rewrite한다", () => {
+    expect(resolveAppRequest(true, "/t/abc123")).toEqual({
+      action: "rewrite",
+      pathname: "/cs/t/abc123",
+      robots: true,
+    });
+  });
+
+  it("포털에서 API 경로는 그대로 통과시킨다", () => {
+    expect(resolveAppRequest(true, "/v1/web-training/abc123")).toEqual({
+      action: "next",
+      pathname: "/v1/web-training/abc123",
+    });
+  });
+
   it("포털에 없는 경로는 안내 페이지로 보낸다", () => {
     expect(resolveAppRequest(true, "/dashboard")).toEqual({
       action: "rewrite",

@@ -1,7 +1,7 @@
 "use client";
 
 import { DraftTrainingReport } from "@/components/report/DraftTrainingReport";
-import type { CallReport, ReportTurn } from "@/lib/types";
+import type { CallReport, ReportTurn, WebTrainingReport } from "@/lib/types";
 import { useState } from "react";
 
 const LABELS = {
@@ -18,6 +18,7 @@ type ReportCollectionProps = {
   final: CallReport | null;
   draftTurns: ReportTurn[];
   unannouncedTurns: ReportTurn[];
+  webTraining?: WebTrainingReport | null;
 };
 
 export function ReportCollection({
@@ -26,6 +27,7 @@ export function ReportCollection({
   final,
   draftTurns,
   unannouncedTurns,
+  webTraining,
 }: ReportCollectionProps) {
   const reports: Record<ReportKey, CallReport | null> = {
     draft,
@@ -72,6 +74,7 @@ export function ReportCollection({
         status={active}
         body={body}
         turns={active === "draft" ? draftTurns : unannouncedTurns}
+        webTraining={webTraining}
       />
     </div>
   );

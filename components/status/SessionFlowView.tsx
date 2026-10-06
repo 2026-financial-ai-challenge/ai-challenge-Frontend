@@ -14,6 +14,7 @@ import { useSessionStore } from "@/lib/stores/session-store";
 import {
   queryKeys,
   useReportQuery,
+  useReportWaitExpired,
   useSessionQuery,
   useSessionsListQuery,
   useStartCallMutation,
@@ -35,7 +36,7 @@ const callCopy: Record<CallStatus, StatusCopy> = {
   },
   completed: {
     title: "리포트 준비 중",
-    body: "통화가 끝났습니다. 1차 리포트를 만들고 있습니다. 잠시만 기다려 주세요.",
+    body: "통화가 끝났습니다. 리포트를 만들고 있습니다. 통화 녹음을 분석하는 데 몇 분 걸릴 수 있으니 이 화면을 열어 두세요.",
   },
   missed: {
     title: "전화를 받지 못했습니다",
@@ -54,6 +55,7 @@ const callCopy: Record<CallStatus, StatusCopy> = {
 function statusCardCopy(
   callStatus: CallStatus,
   reportStatus: ReportStatus | null,
+  waitExpired: boolean,
 ): StatusCopy {
   if (callStatus !== "completed") {
     return callCopy[callStatus];
@@ -62,6 +64,12 @@ function statusCardCopy(
     return {
       title: "리포트를 만들지 못했습니다",
       body: "통화는 끝났지만 리포트를 준비하는 중 문제가 생겼습니다.",
+    };
+  }
+  if (waitExpired) {
+    return {
+      title: "리포트가 아직 준비되지 않았습니다",
+      body: "통화 분석이 평소보다 오래 걸리고 있습니다. 잠시 후 다시 확인해 주세요.",
     };
   }
   return callCopy.completed;
@@ -84,11 +92,12 @@ export function SessionFlowView() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const setSessionId = useSessionStore((state) => state.setSessionId);
-  const { data, error, isLoading } = useSessionQuery(
+  const { data, error, isLoading, isFetching, refetch } = useSessionQuery(
     isAuthenticated ? sessionId : undefined,
   );
   const retryMutation = useStartCallMutation();
   const reportStatus = data?.session.reportStatus ?? null;
+  const waitExpired = useReportWaitExpired(data?.session);
   const {
     data: report,
     error: reportError,
@@ -205,9 +214,13 @@ export function SessionFlowView() {
       <div className="mx-auto max-w-6xl px-5 py-12 sm:px-7 sm:py-16 lg:px-8 lg:py-20">
         {heading}
         <div className="mt-8">
-          {reportLoading || !body ? (
+          {reportLoading ? (
             <p className="text-sm text-text-secondary">
               리포트를 불러오고 있습니다...
+            </p>
+          ) : !body ? (
+            <p className="text-sm text-text-secondary">
+              리포트를 정리하고 있습니다. 준비되면 이 화면이 자동으로 바뀝니다.
             </p>
           ) : (
             <ReportCollection
@@ -217,6 +230,7 @@ export function SessionFlowView() {
               final={report?.final ?? null}
               draftTurns={report?.draftTurns ?? report?.turns ?? []}
               unannouncedTurns={report?.unannouncedTurns ?? report?.turns ?? []}
+              webTraining={report?.webTraining ?? null}
             />
           )}
           <FormError message={errorMessage} className="mt-3" />
@@ -237,7 +251,7 @@ export function SessionFlowView() {
     }
   };
 
-  const copy = statusCardCopy(callStatus, reportStatus);
+  const copy = statusCardCopy(callStatus, reportStatus, waitExpired);
   const canRetry =
     callStatus === "missed" ||
     callStatus === "silent" ||
@@ -269,6 +283,17 @@ export function SessionFlowView() {
               onClick={() => void handleRetry()}
             >
               {retryMutation.isPending ? "다시 거는 중..." : "다시 전화 걸기"}
+            </Button>
+          ) : null}
+          {waitExpired ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5"
+              disabled={isFetching}
+              onClick={() => void refetch()}
+            >
+              {isFetching ? "확인하는 중..." : "다시 확인하기"}
             </Button>
           ) : null}
         </Card>
