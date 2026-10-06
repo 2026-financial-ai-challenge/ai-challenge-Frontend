@@ -211,7 +211,7 @@ export function SessionFlowView() {
     const body = report?.final ?? report?.unannounced ?? report?.draft;
 
     return (
-      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-7 sm:py-16 lg:px-8 lg:py-20">
+      <div className="mx-auto max-w-5xl px-5 py-12 sm:px-7 sm:py-16 lg:px-8 lg:py-20">
         {heading}
         <div className="mt-8">
           {reportLoading ? (

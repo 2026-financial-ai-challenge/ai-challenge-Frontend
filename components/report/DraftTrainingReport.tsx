@@ -1,97 +1,108 @@
 import { StartTrainingAction } from "@/components/landing/StartTrainingAction";
-import { ScoreGauge } from "@/components/report/ScoreGauge";
+import { BehaviorPanel } from "@/components/report/BehaviorPanel";
+import { ScoreGauge, scoreZone } from "@/components/report/ScoreGauge";
 import { WebTrainingSection } from "@/components/report/WebTrainingSection";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import type {
-  CallReport,
-  ReportBehavior,
-  ReportTurn,
-  WebTrainingReport,
-} from "@/lib/types";
+import {
+  BEHAVIOR_ORIGIN_LABELS,
+  annotateBehaviorOrigins,
+  type AnnotatedBehavior,
+} from "@/lib/report-behaviors";
+import type { CallReport, ReportTurn, WebTrainingReport } from "@/lib/types";
 
 type DraftTrainingReportProps = {
   status: "draft" | "unannounced" | "final";
   body: CallReport;
   turns: ReportTurn[];
+  /** 최종 리포트에서 각 행동이 어느 통화에서 나왔는지 표시하는 데 쓰는 통화별 리포트 */
+  calls?: { announced: CallReport | null; unannounced: CallReport | null };
   webTraining?: WebTrainingReport | null;
 };
 
-function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+/**
+ * 리포트는 카드를 흩뿌리지 않고 통화 결과 통지서 한 장으로 둔다. 과감한 자리는
+ * 맨 위 판정 밴드 하나뿐이고, 아래 본문은 종이처럼 조용히 둔다. 색은 위험·방어를
+ * 가르는 데만 쓴다.
+ */
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-border pb-3">
-      <h2 className="text-lg font-bold tracking-tight text-text-primary sm:text-xl">{title}</h2>
-      <span className="text-xs text-text-secondary">{eyebrow}</span>
-    </div>
+    <section className="border-t border-border px-5 py-9 sm:px-9 sm:py-11 lg:px-11">
+      <h2 className="text-xl font-bold tracking-tight text-text-primary">{title}</h2>
+      {description ? (
+        <p className="mt-2 max-w-[58ch] text-base leading-7 text-text-secondary">
+          {description}
+        </p>
+      ) : null}
+      <div className="mt-6">{children}</div>
+    </section>
   );
 }
 
-function ResponseIndicator({
-  label,
+/** 통과·미통과 표시. 동그란 아이콘 칩 대신 글리프만 둔다. */
+function ResultMark({ passed }: { passed: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className={`h-5 w-5 shrink-0 ${passed ? "text-success" : "text-danger"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {passed ? (
+        <path d="M2.5 8.5 6.3 12.3 13.5 3.8" />
+      ) : (
+        <>
+          <path d="M8 2.6v7" />
+          <path d="M8 12.8v.3" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/**
+ * 세 기준은 질문보다 답이 먼저 읽혀야 한다. 답을 크게 올리고 질문은 아래에
+ * 작게 두며, 통과 여부는 타일 전체의 색으로 멀리서도 세어지게 한다.
+ */
+function CriterionTile({
+  question,
   passed,
   positiveText,
   negativeText,
 }: {
-  label: string;
+  question: string;
   passed: boolean;
   positiveText: string;
   negativeText: string;
 }) {
   return (
-    <div className="border border-border bg-card p-5">
-      <p className="text-xs text-text-secondary">{label}</p>
-      <p className="mt-2 text-base font-bold leading-snug text-text-primary">
-        {passed ? positiveText : negativeText}
-      </p>
-      <p
-        className={`mt-3 text-xs font-semibold ${passed ? "text-success" : "text-danger"}`}
-      >
-        {passed ? "잘했어요" : "보완 필요"}
-      </p>
-    </div>
-  );
-}
-
-function BehaviorColumn({
-  title,
-  description,
-  items,
-  tone,
-}: {
-  title: string;
-  description: string;
-  items: ReportBehavior[];
-  tone: "danger" | "success";
-}) {
-  const isDanger = tone === "danger";
-
-  return (
-    <div>
+    <li
+      className={`rounded-xl border p-5 ${
+        passed ? "border-success/20 bg-success-light/60" : "border-danger/20 bg-danger-light/60"
+      }`}
+    >
       <div className="flex items-center gap-2">
-        <Badge variant={tone}>{isDanger ? "위험 신호" : "방어 행동"}</Badge>
-        <h3 className="text-sm font-bold text-text-primary">{title}</h3>
+        <ResultMark passed={passed} />
+        <p
+          className={`text-base font-bold leading-6 ${
+            passed ? "text-success" : "text-danger"
+          }`}
+        >
+          {passed ? positiveText : negativeText}
+        </p>
       </div>
-      <p className="mt-2 text-base leading-6 text-text-secondary">{description}</p>
-      <div className="mt-4 space-y-3">
-        {items.length > 0 ? (
-          items.map((item, index) => (
-            <Card
-              key={`${item.label}-${index}`}
-              className={`p-4 sm:p-5 lg:p-6 ${isDanger ? "border-danger/40 bg-danger-light/40" : "border-success/40 bg-success-light/40"}`}
-            >
-              <p className="text-sm font-semibold text-text-primary">{item.label}</p>
-              {item.evidence ? (
-                <p className="mt-2 text-base leading-6 text-text-primary">“{item.evidence}”</p>
-              ) : null}
-            </Card>
-          ))
-        ) : (
-          <Card className="p-4">
-            <p className="text-sm text-text-secondary">감지된 항목이 없습니다.</p>
-          </Card>
-        )}
-      </div>
-    </div>
+      <p className="mt-2.5 text-sm leading-6 text-text-secondary">{question}</p>
+    </li>
   );
 }
 
@@ -110,193 +121,199 @@ const principles = [
   },
 ];
 
+const KIND_LABELS = {
+  draft: "1차 전화 결과",
+  unannounced: "불시 전화 결과",
+  final: "최종 결과",
+} as const;
+
 export function DraftTrainingReport({
   status,
   body,
   turns,
+  calls,
   webTraining,
 }: DraftTrainingReportProps) {
-  const isUnannounced = status === "unannounced";
   const isFinal = status === "final";
   const userTurns = turns.filter((turn) => turn.role === "user").slice(0, 4);
-  const riskItems = body.riskBehaviors.slice(0, 3);
+  // 최종 리포트만 두 통화를 합친 목록이라 어느 통화에서 나온 행동인지 함께 표시한다.
+  const compared = isFinal ? calls : undefined;
+  const riskBehaviors = annotateBehaviorOrigins(
+    body.riskBehaviors,
+    compared?.announced?.riskBehaviors,
+    compared?.unannounced?.riskBehaviors,
+  );
+  const defenseBehaviors = annotateBehaviorOrigins(
+    body.defenseBehaviors,
+    compared?.announced?.defenseBehaviors,
+    compared?.unannounced?.defenseBehaviors,
+  );
+  const zone = scoreZone(body.score);
+
+  // 판정 밴드에 실제 발화를 한 줄 올린다. 점수가 낮으면 가장 위험했던 말을,
+  // 높으면 통화를 지켜낸 말을 뽑는다. 근거가 없는 행동은 인용할 게 없어 건너뛴다.
+  const quotable = (items: AnnotatedBehavior[]) =>
+    items.find((item) => item.evidence && item.evidence.trim().length > 0);
+  const keyMoment =
+    zone.label === "양호"
+      ? (quotable(defenseBehaviors) ?? quotable(riskBehaviors))
+      : (quotable(riskBehaviors) ?? quotable(defenseBehaviors));
+  const keyMomentIsDefense = keyMoment
+    ? defenseBehaviors.includes(keyMoment)
+    : false;
+
+  const toPanelItems = (items: AnnotatedBehavior[]) =>
+    items.map((item) => ({
+      label: item.label,
+      evidence: item.evidence,
+      note: item.origin ? BEHAVIOR_ORIGIN_LABELS[item.origin] : null,
+    }));
 
   return (
-    <div className="space-y-14 sm:space-y-16 lg:space-y-20">
-      <section>
-        <Badge variant={status === "draft" ? "default" : "secondary"}>
-          {isFinal
-            ? "최종 종합 리포트"
-            : isUnannounced
-              ? "불시 전화 리포트"
-              : "1차 리포트"}
-        </Badge>
-        <h1 className="mt-3 text-xl font-bold tracking-tight text-text-primary sm:text-2xl">
-          {isFinal
-            ? "두 번의 통화에서 보인 대응을 종합했어요"
-            : isUnannounced
-            ? "불시 전화에서 보인 대응을 분석했어요"
-            : "첫 번째 통화에서 보인 대응을 분석했어요"}
-        </h1>
-        <p className="mt-3 text-base leading-6 text-text-secondary">
-          실시간 받아쓰기를 기준으로 만든 결과라 실제 대화와 일부 다를 수 있습니다.
-        </p>
-      </section>
+    <div>
+      <article className="overflow-hidden break-keep rounded-2xl border border-border bg-card shadow-sheet">
+        {/* 종이 맨 윗선이 판정 색을 쥔다. 멀리서도 결과가 먼저 읽히게. */}
+        <div className={`h-1.5 ${zone.band}`} aria-hidden />
 
-      <section>
-        <SectionHeading eyebrow="통화 분석" title="통화 속 반응과 핵심 진단" />
-        <div className="mt-7 grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_3rem_minmax(0,1.15fr)]">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {userTurns.length > 0 ? (
-              userTurns.map((turn, index) => (
-                <Card
-                  key={`${turn.text}-${index}`}
-                  className={`p-4 sm:p-5 lg:p-6 ${index % 2 === 1 ? "sm:translate-y-4" : ""}`}
-                >
-                  <p className="text-base leading-6 text-text-primary">“{turn.text}”</p>
-                </Card>
-              ))
-            ) : (
-              <Card className="p-4 sm:col-span-2">
-                <p className="text-sm text-text-secondary">확인할 수 있는 사용자 발화가 없습니다.</p>
-              </Card>
-            )}
-          </div>
+        <header className="bg-primary-deep px-5 py-8 sm:px-9 sm:py-10 lg:px-11 lg:py-12">
+          <p className="text-base font-bold text-white">{KIND_LABELS[status]}</p>
 
-          <div className="hidden items-center lg:flex" aria-hidden="true">
-            <span className="h-px flex-1 border-t border-dashed border-primary" />
-            <span className="ml-1 text-primary">→</span>
-          </div>
+          <div className="mt-8 grid gap-9 lg:grid-cols-[17.5rem_minmax(0,1fr)] lg:gap-14">
+            <ScoreGauge
+              variant="hero"
+              score={body.score}
+              label={isFinal ? "종합 점수" : "대응 점수"}
+            />
 
-          <Card className="p-6 sm:p-8 lg:p-10">
-            <p className="text-xs font-semibold text-primary">핵심 진단</p>
-            <p className="mt-3 text-base font-bold leading-7 text-text-primary">{body.summary}</p>
-            <div className="mt-5 border-l-2 border-primary/30 pl-4">
-              <p className="text-xs text-text-secondary">다음 통화에서는</p>
-              <p className="mt-1 text-base font-semibold leading-6 text-text-primary">
-                {body.coaching}
+            <div className="lg:border-l lg:border-white/10 lg:pl-14">
+              <p className="max-w-[46ch] text-[1.0625rem] leading-[1.85] text-white/85 sm:text-lg">
+                {body.summary}
               </p>
-            </div>
-          </Card>
-        </div>
-      </section>
 
-      <section>
-        <SectionHeading eyebrow="대응 지표" title="세 가지 기준으로 대응을 살펴봤어요" />
-        <div className="mt-7 grid items-center gap-7 md:grid-cols-[minmax(18rem,0.9fr)_minmax(0,2.1fr)] lg:gap-10">
-          <Card className="p-5 sm:p-7 lg:p-8">
-            <ScoreGauge score={body.score} />
-          </Card>
-          <div className="grid gap-5 sm:grid-cols-3 lg:gap-7">
-            <ResponseIndicator
-              label="상황을 의심했나요?"
+              {keyMoment ? (
+                <figure className="mt-7 border-l-2 border-white/20 pl-5">
+                  <figcaption
+                    className={`text-sm font-semibold ${
+                      keyMomentIsDefense ? "text-success-bright" : "text-danger-bright"
+                    }`}
+                  >
+                    {keyMomentIsDefense
+                      ? "이 말이 통화를 지켰어요"
+                      : "이 말이 가장 위험했어요"}
+                  </figcaption>
+                  <blockquote className="mt-1.5 max-w-[42ch] text-base leading-7 text-white">
+                    “{keyMoment.evidence}”
+                  </blockquote>
+                </figure>
+              ) : null}
+            </div>
+          </div>
+        </header>
+
+        <Section title="세 가지 기준으로 대응을 살펴봤어요">
+          <ul className="grid gap-4 sm:grid-cols-3">
+            <CriterionTile
+              question="상황을 의심했나요?"
               passed={body.suspected}
               positiveText="의심했어요"
               negativeText="의심하지 못했어요"
             />
-            <ResponseIndicator
-              label="개인정보를 지켰나요?"
+            <CriterionTile
+              question="개인정보를 지켰나요?"
               passed={!body.gaveName}
               positiveText="이름을 지켰어요"
               negativeText="이름을 말했어요"
             />
-            <ResponseIndicator
-              label="통화를 끝내려 했나요?"
+            <CriterionTile
+              question="통화를 끝내려 했나요?"
               passed={body.triedHangup}
               positiveText="종료를 시도했어요"
               negativeText="종료하지 못했어요"
             />
-          </div>
-        </div>
-      </section>
+          </ul>
+        </Section>
 
-      {webTraining ? (
-        <WebTrainingSection phoneScore={body.score} report={webTraining} />
-      ) : null}
-
-      <section>
-        <SectionHeading eyebrow="행동 분석" title="위험했던 순간과 잘 막아낸 순간" />
-        <div className="mt-7 grid gap-8 lg:grid-cols-2 lg:gap-10">
-          <BehaviorColumn
-            title="조심해야 할 반응"
-            description="상대가 통화를 이어가거나 정보를 얻는 데 도움이 될 수 있는 행동이에요."
-            items={body.riskBehaviors}
-            tone="danger"
-          />
-          <BehaviorColumn
-            title="계속 유지할 반응"
-            description="피싱 상황에서 나를 보호하는 데 도움이 된 행동이에요."
-            items={body.defenseBehaviors}
-            tone="success"
-          />
-        </div>
-      </section>
-
-      <section>
-        <SectionHeading eyebrow="위험 신호 → 다음 대응" title="같은 상황이 오면 이렇게 바꿔보세요" />
-        <div className="mt-6 space-y-4">
-          {riskItems.length > 0 ? (
-            riskItems.map((item, index) => (
-              <div
-                key={`${item.label}-${index}`}
-                className="grid items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)]"
-              >
-                <Card className="p-5 lg:p-7">
-                  <p className="text-xs font-semibold text-danger">위험 신호</p>
-                  <p className="mt-2 text-sm font-semibold text-text-primary">{item.label}</p>
-                  {item.evidence ? (
-                    <p className="mt-2 text-base leading-6 text-text-secondary">“{item.evidence}”</p>
-                  ) : null}
-                </Card>
-                <div className="hidden items-center justify-center text-primary sm:flex" aria-hidden="true">
-                  →
-                </div>
-                <Card className="border-primary/30 bg-primary-light/40 p-5 lg:p-7">
-                  <p className="text-xs font-semibold text-primary">다음 대응</p>
-                  <p className="mt-2 text-base font-semibold leading-6 text-text-primary">
-                    {body.coaching}
-                  </p>
-                </Card>
-              </div>
-            ))
-          ) : (
-            <Card className="border-success/40 bg-success-light/40 p-5">
-              <p className="text-base font-semibold text-text-primary">
-                뚜렷한 위험 행동이 감지되지 않았어요. 지금의 방어 습관을 유지해 주세요.
-              </p>
-            </Card>
-          )}
-        </div>
-      </section>
-
-      <section>
-        <Card className="overflow-hidden bg-primary-light/50">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <Badge>다음 통화 대응 원칙</Badge>
-            <div className="mt-7 grid gap-7 sm:grid-cols-3 lg:gap-10">
-              {principles.map((principle) => (
-                <div key={principle.title}>
-                  <h3 className="text-sm font-bold text-text-primary">{principle.title}</h3>
-                  <p className="mt-2 text-base leading-6 text-text-secondary">
-                    {principle.description}
-                  </p>
-                </div>
+        {userTurns.length > 0 ? (
+          <Section
+            title="통화에서 실제로 한 말"
+            description="받아쓰기에 남은 앞부분입니다. 분석을 빼고 말 그대로 옮겼습니다."
+          >
+            <ul className="grid gap-px overflow-hidden rounded-xl bg-border sm:grid-cols-2">
+              {userTurns.map((turn, index) => (
+                <li
+                  key={`${turn.text}-${index}`}
+                  className="bg-background-muted px-5 py-4 text-base leading-7 text-text-primary"
+                >
+                  “{turn.text}”
+                </li>
               ))}
-            </div>
-          </div>
-        </Card>
-      </section>
+            </ul>
+          </Section>
+        ) : null}
 
-      {turns.length > 0 ? (
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-border bg-card px-5 py-4 text-sm font-semibold text-text-primary [&::-webkit-details-marker]:hidden">
-            전체 대화 기록 보기
-            <span className="text-primary transition-transform group-open:rotate-180" aria-hidden="true">
-              ↓
-            </span>
-          </summary>
-          <Card className="mt-3 overflow-hidden">
-            <ul className="h-[28rem] space-y-4 overflow-y-auto overscroll-contain bg-primary-light/60 px-4 py-5 sm:px-5">
+        {webTraining ? (
+          <WebTrainingSection phoneScore={body.score} report={webTraining} />
+        ) : null}
+
+        <Section title="위험했던 순간과 잘 막아낸 순간">
+          {/* 한쪽이 비면 판 높이를 맞추지 않는다. 빈 색면이 길게 남는 쪽이 더 나쁘다. */}
+          <div className="grid items-start gap-5 lg:grid-cols-2">
+            <BehaviorPanel
+              title="조심해야 할 반응"
+              description="상대가 통화를 이어가거나 정보를 얻는 데 도움이 될 수 있는 행동이에요."
+              items={toPanelItems(riskBehaviors)}
+              tone="danger"
+              emptyText="위험한 반응이 없었어요. 지금처럼 하면 돼요."
+            />
+            <BehaviorPanel
+              title="계속 유지할 반응"
+              description="피싱 상황에서 나를 보호하는 데 도움이 된 행동이에요."
+              items={toPanelItems(defenseBehaviors)}
+              tone="success"
+              emptyText="막아낸 반응이 없었어요. 아래 세 가지부터 연습해 보세요."
+            />
+          </div>
+        </Section>
+
+        <Section title="같은 상황이 오면 이렇게 바꿔보세요">
+          <div className="rounded-xl bg-primary px-6 py-7 sm:px-8 sm:py-8">
+            <p className="text-sm font-semibold text-white/55">다음 통화에서는</p>
+            <p className="mt-2 max-w-[36ch] text-xl font-bold leading-8 text-white sm:text-2xl sm:leading-9">
+              {body.coaching}
+            </p>
+          </div>
+
+          <h3 className="mt-9 text-base font-bold text-text-primary">기억해 둘 세 가지</h3>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+            {principles.map((principle) => (
+              <div
+                key={principle.title}
+                className="border-t-2 border-primary/30 pt-3.5"
+              >
+                <dt className="text-base font-bold text-text-primary">
+                  {principle.title}
+                </dt>
+                <dd className="mt-1 text-base leading-7 text-text-secondary">
+                  {principle.description}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </Section>
+
+        {/* 최종 리포트는 두 통화를 종합한 결과라, 한쪽 통화의 대화 기록만 붙이면 오해를 준다. */}
+        {!isFinal && turns.length > 0 ? (
+          <details className="group border-t border-border">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-5 text-sm font-semibold text-text-primary hover:bg-background-muted sm:px-9 lg:px-11 [&::-webkit-details-marker]:hidden">
+              전체 대화 기록 보기
+              <span
+                className="text-text-secondary transition-transform group-open:rotate-180"
+                aria-hidden
+              >
+                ↓
+              </span>
+            </summary>
+            <ul className="max-h-[26rem] space-y-4 overflow-y-auto overscroll-contain border-t border-border bg-background-muted px-5 py-6 sm:px-9 lg:px-11">
               {turns.map((turn, index) => {
                 const isUser = turn.role === "user";
                 return (
@@ -322,11 +339,11 @@ export function DraftTrainingReport({
                 );
               })}
             </ul>
-          </Card>
-        </details>
-      ) : null}
+          </details>
+        ) : null}
+      </article>
 
-      <div className="sticky bottom-4 z-10 bg-background-muted/90 pt-2 backdrop-blur-sm">
+      <div className="mt-8">
         <StartTrainingAction size="lg" label="다시 훈련받기" className="w-full" />
       </div>
     </div>
