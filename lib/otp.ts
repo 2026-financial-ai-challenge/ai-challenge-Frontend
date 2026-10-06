@@ -1,3 +1,5 @@
+export const OTP_CODE_LENGTH = 6;
+
 export const OTP_ERROR = {
   INVALID_PHONE: "INVALID_PHONE",
   OTP_NOT_REQUESTED: "OTP_NOT_REQUESTED",
@@ -14,3 +16,16 @@ export const OTP_ERROR = {
 } as const;
 
 export type OtpErrorCode = (typeof OTP_ERROR)[keyof typeof OTP_ERROR];
+
+export function isOtpConfirmBlocked(input: {
+  expired: boolean;
+  codeLength: number;
+  errorCode?: string | null;
+}): boolean {
+  return (
+    input.expired ||
+    input.codeLength !== OTP_CODE_LENGTH ||
+    input.errorCode === OTP_ERROR.OTP_LOCKED ||
+    input.errorCode === OTP_ERROR.OTP_NOT_REQUESTED
+  );
+}

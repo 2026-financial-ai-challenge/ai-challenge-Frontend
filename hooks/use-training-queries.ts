@@ -8,6 +8,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { nextReportPoll, nextSessionPoll } from "@/lib/session-polling";
 import { isReportReady } from "@/lib/types";
 import type {
   LoginRequest,
@@ -115,40 +116,15 @@ export function useSessionQuery(sessionId: string | undefined) {
     refetchOnReconnect: false,
     refetchIntervalInBackground: false,
     refetchInterval: (query) => {
-      if (startedAtRef.current === null) {
-        startedAtRef.current = Date.now();
-      }
-      const session = query.state.data?.session;
-      if (!session?.callStatus) return false;
-      if (
-        session.callStatus !== lastStatusRef.current &&
-        (session.callStatus === "waiting" || session.callStatus === "calling")
-      ) {
-        startedAtRef.current = Date.now();
-      }
-      lastStatusRef.current = session.callStatus;
-      if (
-        session.callStatus === "missed" ||
-        session.callStatus === "silent" ||
-        session.callStatus === "failed"
-      ) {
-        return false;
-      }
-      if (
-        session.reportStatus === "draft" ||
-        session.reportStatus === "final" ||
-        session.reportStatus === "failed"
-      ) {
-        return false;
-      }
-      if (Date.now() - startedAtRef.current > 180_000) return false;
-      if (session.callStatus === "completed") {
-        const updated = Date.parse(session.updatedAt);
-        if (Number.isFinite(updated) && Date.now() - updated > 20_000) {
-          return false;
-        }
-      }
-      return 3000;
+      const next = nextSessionPoll({
+        now: Date.now(),
+        startedAt: startedAtRef.current,
+        lastStatus: lastStatusRef.current,
+        session: query.state.data?.session,
+      });
+      startedAtRef.current = next.startedAt;
+      lastStatusRef.current = next.lastStatus;
+      return next.interval;
     },
   });
 }
@@ -169,10 +145,7 @@ export function useReportQuery(
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchIntervalInBackground: false,
-    refetchInterval: (query) => {
-      if (query.state.data?.status === "final") return false;
-      if (!ready) return false;
-      return 15_000;
-    },
+    refetchInterval: (query) =>
+      nextReportPoll(query.state.data?.status, ready),
   });
 }

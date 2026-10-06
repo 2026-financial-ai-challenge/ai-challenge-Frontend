@@ -110,7 +110,7 @@ export function SignupForm() {
         ...values,
         verificationToken: verified.verificationToken,
       });
-      setAuth(auth.accessToken, auth.participant);
+      setAuth(auth.accessToken, auth.participant, auth.expiresInSec);
       router.push("/dashboard");
     } catch {
       bumpErrorNonce();

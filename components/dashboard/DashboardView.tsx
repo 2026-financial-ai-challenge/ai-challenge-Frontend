@@ -12,7 +12,7 @@ import {
 } from "@/hooks/use-training-queries";
 import { ApiError } from "@/lib/errors";
 import { OTP_ERROR } from "@/lib/otp";
-import { replaceTo, useAuthStore } from "@/lib/stores/auth-store";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { useSessionStore } from "@/lib/stores/session-store";
 import type { Session } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -86,7 +86,6 @@ function Judgement({
 export function DashboardView() {
   const isAuthenticated = useRequireAuth("/dashboard");
   const participant = useAuthStore((state) => state.participant);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const sessionHydrated = useSessionStore((state) => state.hasHydrated);
   const sessionId = useSessionStore((state) => state.sessionId);
@@ -111,18 +110,13 @@ export function DashboardView() {
 
   useEffect(() => {
     if (!error) return;
-    if (error instanceof ApiError && error.status === 401) {
-      clearAuth();
-      replaceTo("/login?next=/dashboard");
-      return;
-    }
     if (
       error instanceof ApiError &&
       (error.status === 404 || error.code === OTP_ERROR.SESSION_NOT_FOUND)
     ) {
       setSessionId(null);
     }
-  }, [error, setSessionId, clearAuth]);
+  }, [error, setSessionId]);
 
   if (!ready) {
     return (

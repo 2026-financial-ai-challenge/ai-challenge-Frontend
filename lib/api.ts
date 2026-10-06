@@ -1,3 +1,18 @@
+import {
+  authResponseSchema,
+  getReportResponseSchema,
+  getSessionResponseSchema,
+  listSessionsResponseSchema,
+  requestSignupOtpResponseSchema,
+  startCallResponseSchema,
+  submitConsentResponseSchema,
+  verifySignupOtpResponseSchema,
+} from "@/lib/api-schemas";
+import {
+  expireAuthIfNeeded,
+  handleUnauthorized,
+  isPublicAuthPath,
+} from "@/lib/auth-session";
 import { ApiError } from "@/lib/errors";
 import { getAuthToken } from "@/lib/stores/auth-store";
 import type {
@@ -15,6 +30,7 @@ import type {
   VerifySignupOtpRequest,
   VerifySignupOtpResponse,
 } from "@/lib/types";
+import type { ZodTypeAny } from "zod";
 
 /**
  * POST /v1/auth/signup/otp
@@ -47,7 +63,24 @@ function authHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+function parseBody<T>(schema: ZodTypeAny, data: unknown): T {
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    throw new ApiError("서버 응답 형식이 올바르지 않습니다.", 502);
+  }
+  return parsed.data as T;
+}
+
+async function request<T>(
+  path: string,
+  schema: ZodTypeAny,
+  init?: RequestInit,
+): Promise<T> {
+  if (expireAuthIfNeeded() && !isPublicAuthPath(path)) {
+    handleUnauthorized();
+    throw new ApiError("로그인이 만료되었습니다. 다시 로그인해 주세요.", 401);
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
     headers: {
@@ -69,56 +102,85 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       // ignore non-JSON error bodies
     }
 
+    if (res.status === 401 && !isPublicAuthPath(path)) {
+      handleUnauthorized();
+    }
+
     throw new ApiError(message, res.status, code);
   }
 
-  return res.json() as Promise<T>;
+  return parseBody(schema, await res.json());
 }
 
 export const api: ApiClient = {
   requestSignupOtp(body) {
-    return request<RequestSignupOtpResponse>("/v1/auth/signup/otp", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+    return request<RequestSignupOtpResponse>(
+      "/v1/auth/signup/otp",
+      requestSignupOtpResponseSchema,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
   },
   verifySignupOtp(body) {
-    return request<VerifySignupOtpResponse>("/v1/auth/signup/verify", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+    return request<VerifySignupOtpResponse>(
+      "/v1/auth/signup/verify",
+      verifySignupOtpResponseSchema,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
   },
   signup(body) {
-    return request<AuthResponse>("/v1/auth/signup", {
+    return request<AuthResponse>("/v1/auth/signup", authResponseSchema, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
   login(body) {
-    return request<AuthResponse>("/v1/auth/login", {
+    return request<AuthResponse>("/v1/auth/login", authResponseSchema, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
   submitConsent(body) {
-    return request<SubmitConsentResponse>("/v1/consents", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+    return request<SubmitConsentResponse>(
+      "/v1/consents",
+      submitConsentResponseSchema,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
   },
   listSessions() {
-    return request<ListSessionsResponse>("/v1/sessions");
+    return request<ListSessionsResponse>(
+      "/v1/sessions",
+      listSessionsResponseSchema,
+    );
   },
   getSession(sessionId) {
-    return request<GetSessionResponse>(`/v1/sessions/${sessionId}`);
+    return request<GetSessionResponse>(
+      `/v1/sessions/${sessionId}`,
+      getSessionResponseSchema,
+    );
   },
   startCall(sessionId) {
-    return request<StartCallResponse>(`/v1/sessions/${sessionId}/calls`, {
-      method: "POST",
-      body: "{}",
-    });
+    return request<StartCallResponse>(
+      `/v1/sessions/${sessionId}/calls`,
+      startCallResponseSchema,
+      {
+        method: "POST",
+        body: "{}",
+      },
+    );
   },
   getReport(sessionId) {
-    return request<GetReportResponse>(`/v1/sessions/${sessionId}/report`);
+    return request<GetReportResponse>(
+      `/v1/sessions/${sessionId}/report`,
+      getReportResponseSchema,
+    );
   },
 };
