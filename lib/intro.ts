@@ -1,3 +1,14 @@
+/**
+ * 랜딩 체험은 실제 훈련 시뮬레이션과 이어지지 않는 독립 데모다. 그래서 훈련
+ * 시나리오가 쓰는 가상 포털(lib/portal.ts)과도 이름을 공유하지 않고, 이 화면
+ * 전용 가상 기관을 쓴다. 실존 기관명·대표번호는 사칭 대사에 넣지 않는다 —
+ * 체험의 실감은 기관명이 아니라 긴급성·비밀 유지·권위 압박에서 나온다.
+ */
+export const INTRO_FAKE_AGENCY = "한울중앙수사청";
+export const INTRO_FAKE_UNIT = "금융범죄수사1부";
+export const INTRO_FAKE_SITE = `${INTRO_FAKE_AGENCY} 전자민원`;
+export const INTRO_CALLER_NUMBER = "070-5275-3828";
+
 export type StageNumber = 1 | 2 | 3;
 export type ChoiceKey = "A" | "B";
 export type UserChoices = Record<StageNumber, ChoiceKey | undefined>;
@@ -17,8 +28,7 @@ export const STAGES_CONFIG: Record<
 > = {
   1: () => ({
     stageNumber: 1,
-    script:
-      "서울중앙지검 금융범죄수사1부 이진우 수사관입니다. 김영수 씨 되십니까? 본인 명의로 개설된 계좌가 자금세탁 사기 사건에 쓰여서 연락드렸습니다. 직접 개설하신 계좌 맞습니까?",
+    script: `${INTRO_FAKE_AGENCY} ${INTRO_FAKE_UNIT} 이진우 수사관입니다. 김영수 씨 되십니까? 본인 명의로 개설된 계좌가 자금세탁 사기 사건에 쓰여서 연락드렸습니다. 직접 개설하신 계좌 맞습니까?`,
     choices: [
       {
         key: "A",
@@ -26,7 +36,7 @@ export const STAGES_CONFIG: Record<
       },
       {
         key: "B",
-        text: "의심스러운데요. 소속 남겨주시면 제가 1301로 직접 다시 걸겠습니다.",
+        text: "의심스러운데요. 소속 남겨주시면 제가 대표번호를 직접 찾아서 다시 걸겠습니다.",
       },
     ],
   }),
@@ -34,8 +44,8 @@ export const STAGES_CONFIG: Record<
     stageNumber: 2,
     script:
       prevChoice === "B"
-        ? "선생님, 지금 장난 전화 아닙니다. 공무집행 중 끊으시면 출석 기피로 간주되어 바로 체포영장 청구됩니다. 대검찰청 사이트에서 사건번호 2026-형제-4892호 직접 조회해보십시오."
-        : "명의도용 피해를 입증하셔야 혐의를 벗습니다. 지금 대검찰청 사이트 들어가셔서 사건번호 2026-형제-4892호 조회해보십시오. 본인 이름으로 출석요구서 올라와 있습니다.",
+        ? `선생님, 지금 장난 전화 아닙니다. 공무집행 중 끊으시면 출석 기피로 간주되어 바로 체포영장 청구됩니다. ${INTRO_FAKE_SITE}에서 사건번호 2026-형제-4892호 직접 조회해보십시오.`
+        : `명의도용 피해를 입증하셔야 혐의를 벗습니다. 지금 ${INTRO_FAKE_SITE} 들어가셔서 사건번호 2026-형제-4892호 조회해보십시오. 본인 이름으로 출석요구서 올라와 있습니다.`,
     choices: [
       {
         key: "A",
@@ -52,7 +62,7 @@ export const STAGES_CONFIG: Record<
     script:
       prevChoice === "B"
         ? "수사 기밀이라 외부로 발설하시면 공범으로 즉시 긴급체포 대상입니다. 결백을 입증하시려면 지금 보내드리는 보안 인증 앱 설치하고 휴대전화 검사부터 받으십시오."
-        : "금융보안원 원격 검사로 자산 동결을 막아야 합니다. 지금 문자로 보내드리는 보안 앱 설치하시고 화면 유지하십시오.",
+        : "금융보안 원격 검사로 자산 동결을 막아야 합니다. 지금 문자로 보내드리는 보안 앱 설치하시고 화면 유지하십시오.",
     choices: [
       {
         key: "A",
