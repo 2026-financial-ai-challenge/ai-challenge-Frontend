@@ -5,7 +5,7 @@ import { portalHref } from "@/lib/portal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-export function VerifyForm() {
+export function VerifyForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [name, setName] = useState(searchParams.get("name") ?? "");
@@ -25,6 +25,10 @@ export function VerifyForm() {
 
     setPending(true);
     await new Promise((resolve) => window.setTimeout(resolve, 700));
+    if (onSubmitted) {
+      onSubmitted();
+      return;
+    }
     const params = new URLSearchParams({
       caseNo: searchParams.get("caseNo") ?? "2023-조사-1842",
       name: name.trim(),

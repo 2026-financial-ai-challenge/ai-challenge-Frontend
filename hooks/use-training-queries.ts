@@ -8,12 +8,17 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { nextReportPoll, nextSessionPoll } from "@/lib/session-polling";
+import {
+  nextReportPoll,
+  nextSessionPoll,
+  REPORT_WAIT_LIMIT_MS,
+} from "@/lib/session-polling";
 import { isReportReady } from "@/lib/types";
 import type {
   LoginRequest,
   ReportStatus,
   RequestSignupOtpRequest,
+  Session,
   SignupRequest,
   SubmitConsentRequest,
   VerifySignupOtpRequest,
@@ -25,6 +30,30 @@ export const queryKeys = {
     ["report", sessionId, reportStatus] as const,
   sessions: ["sessions"] as const,
 };
+
+/** 통화는 끝났는데 리포트가 오지 않은 채 자동 확인 시간이 지났는지. */
+export function useReportWaitExpired(session: Session | undefined): boolean {
+  const waiting =
+    session?.callStatus === "completed" &&
+    !isReportReady(session.reportStatus) &&
+    session.reportStatus !== "failed";
+  const updated = session ? Date.parse(session.updatedAt) : NaN;
+  const deadline =
+    waiting && Number.isFinite(updated) ? updated + REPORT_WAIT_LIMIT_MS : null;
+  const [expiredDeadline, setExpiredDeadline] = useState<number | null>(null);
+
+  // 폴링이 멈추면 다시 렌더링되지 않으므로, 시간이 다 되는 순간 직접 깨운다.
+  useEffect(() => {
+    if (deadline === null) return;
+    const timer = setTimeout(
+      () => setExpiredDeadline(deadline),
+      Math.max(0, deadline - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [deadline]);
+
+  return deadline !== null && expiredDeadline === deadline;
+}
 
 function useTabVisible() {
   const [visible, setVisible] = useState(() =>
@@ -77,6 +106,12 @@ export function useLoginMutation() {
 export function useStartCallMutation() {
   return useMutation({
     mutationFn: (sessionId: string) => api.startCall(sessionId),
+  });
+}
+
+export function useCreateWebTrainingLinkMutation() {
+  return useMutation({
+    mutationFn: (sessionId: string) => api.createWebTrainingLink(sessionId),
   });
 }
 

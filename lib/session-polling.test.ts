@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  COMPLETED_STALE_MS,
   nextReportPoll,
   nextSessionPoll,
+  REPORT_WAIT_LIMIT_MS,
+  REPORT_WAIT_SLOW_AFTER_MS,
+  REPORT_WAIT_SLOW_POLL_MS,
   SESSION_POLL_CAP_MS,
   SESSION_POLL_MS,
 } from "@/lib/session-polling";
@@ -59,10 +61,45 @@ describe("nextSessionPoll", () => {
     ).toBe(false);
   });
 
-  it("완료 후 오래되면 멈춘다", () => {
+  it("통화가 끝나면 발신 제한시간을 넘겨도 리포트를 계속 기다린다", () => {
     expect(
       nextSessionPoll({
-        now: now + COMPLETED_STALE_MS + 1,
+        now: now + SESSION_POLL_CAP_MS + 1,
+        startedAt: now,
+        lastStatus: "completed",
+        session: sampleSession({
+          callStatus: "completed",
+          reportStatus: "pending",
+          updatedAt: new Date(now).toISOString(),
+        }),
+      }).interval,
+    ).toBe(REPORT_WAIT_SLOW_POLL_MS);
+  });
+
+  it("리포트를 1분 넘게 기다리면 확인 간격을 늘린다", () => {
+    const completed = sampleSession({
+      callStatus: "completed",
+      reportStatus: "pending",
+      updatedAt: new Date(now).toISOString(),
+    });
+    expect(
+      nextSessionPoll({ now, startedAt: now, lastStatus: "completed", session: completed })
+        .interval,
+    ).toBe(SESSION_POLL_MS);
+    expect(
+      nextSessionPoll({
+        now: now + REPORT_WAIT_SLOW_AFTER_MS + 1,
+        startedAt: now,
+        lastStatus: "completed",
+        session: completed,
+      }).interval,
+    ).toBe(REPORT_WAIT_SLOW_POLL_MS);
+  });
+
+  it("리포트 대기 10분이 지나면 멈춘다", () => {
+    expect(
+      nextSessionPoll({
+        now: now + REPORT_WAIT_LIMIT_MS + 1,
         startedAt: now,
         lastStatus: "completed",
         session: sampleSession({
