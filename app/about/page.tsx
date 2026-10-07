@@ -10,7 +10,6 @@ export const metadata: Metadata = {
     "안심피싱이 실제 전화로 보이스피싱 대응훈련을 진행하는 이유와 방식을 소개합니다.",
 };
 
-/** 통화 경과 시간 순서. 아래로 갈수록 판단력이 무너지는 흐름을 보여 준다. */
 const moments = [
   {
     elapsed: "00:12",
@@ -29,7 +28,6 @@ const moments = [
   },
 ];
 
-/** 순서대로 하나씩 드러나는 유일한 자동 모션. */
 const revealDelays = ["delay-150", "delay-500", "delay-[850ms]"];
 
 const comparison = [

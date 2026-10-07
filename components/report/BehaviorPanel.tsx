@@ -3,7 +3,6 @@ export type BehaviorTone = "danger" | "success";
 export type PanelBehavior = {
   label: string;
   evidence?: string | null;
-  /** 어느 통화에서 나온 행동인지 같은 짧은 꼬리표 */
   note?: string | null;
 };
 
@@ -26,11 +25,6 @@ const TONE = {
   },
 } as const;
 
-/**
- * 위험 행동과 방어 행동은 색으로만 갈린다. 톤을 입힌 판 하나에 머리글과 항목을
- * 같이 담고, 항목끼리는 같은 톤의 가는 줄로만 나눈다. 판 안에 또 상자를 넣으면
- * 리포트가 카드 묶음처럼 보여서 쓰지 않는다.
- */
 export function BehaviorPanel({
   title,
   description,

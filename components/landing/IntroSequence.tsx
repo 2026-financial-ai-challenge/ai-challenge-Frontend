@@ -44,14 +44,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type IntroMode = "ringing" | "call" | "declined" | "verdict";
 
-/** 초점을 모달 안에 가둘 때 훑는 요소들. */
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-/**
- * 대사를 한 글자씩 흘려 보여 준다. 누르면 즉시 전체를 보여 준다.
- * 스테이지가 바뀔 때는 `key`로 다시 마운트해 진행 상태를 초기화한다.
- */
 function TypedScript({ script }: { script: string }) {
   const [length, setLength] = useState(0);
   const isTyping = length < script.length;
@@ -68,12 +63,10 @@ function TypedScript({ script }: { script: string }) {
   return (
     <button
       type="button"
-      // 다 찍힌 뒤에는 누를 일이 없으므로 초점 순서에서도 빠진다.
       disabled={!isTyping}
       onClick={() => setLength(script.length)}
       className="w-full rounded-[22px] bg-white/[0.16] p-4 backdrop-blur-2xl border border-white/15 text-left shadow-lg transition-all enabled:cursor-pointer enabled:hover:bg-white/[0.22] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
     >
-      {/* 눈으로는 한 글자씩, 스크린리더에는 전체 대사를 한 번에 전달한다. */}
       <p
         aria-hidden="true"
         className="text-[13px] leading-relaxed text-white font-sans font-normal"
@@ -95,13 +88,11 @@ export function IntroSequence() {
   const introHydrated = useIntroHydrated();
   const introSeen = useIntroStore((state) => state.seen);
 
-  // localStorage를 읽기 전에는 서버 렌더와 같은 상태(비표시)를 유지한다.
   if (!introHydrated || introSeen) return null;
 
   return <IntroExperience />;
 }
 
-/** 실제 체험 UI. 닫으면 언마운트되므로 내부 타이머·리스너도 함께 정리된다. */
 function IntroExperience() {
   const setIntroActive = useIntroStore((state) => state.setActive);
   const markIntroSeen = useIntroStore((state) => state.markSeen);
@@ -110,13 +101,11 @@ function IntroExperience() {
   const [userChoices, setUserChoices] = useState<UserChoices>(emptyChoices);
   const [callDuration, setCallDuration] = useState(0);
 
-  // 슬라이더 상태. slideX는 축소 배율을 적용하지 않은 레이아웃 px이다.
   const [slideX, setSlideX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const sliderTrackRef = useRef<HTMLDivElement>(null);
   const sliderKnobRef = useRef<HTMLDivElement>(null);
 
-  // 프레임 축소 배율. 드래그 좌표 환산에도 필요해서 ref로 같이 들고 있다.
   const [frameScale, setFrameScale] = useState(1);
   const frameScaleRef = useRef(1);
 
@@ -130,7 +119,6 @@ function IntroExperience() {
     return () => setIntroActive(false);
   }, [setIntroActive]);
 
-  // 배경 스크롤 잠금
   useEffect(() => {
     const originalHtml = document.documentElement.style.overflow;
     const originalBody = document.body.style.overflow;
@@ -142,7 +130,6 @@ function IntroExperience() {
     };
   }, []);
 
-  // 현재 시간 & 날짜 실시간 연동
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -160,7 +147,6 @@ function IntroExperience() {
     return () => clearInterval(interval);
   }, []);
 
-  // 통화 연결 시 타이머
   useEffect(() => {
     if (mode !== "call") return;
     const timer = setInterval(() => {
@@ -169,7 +155,6 @@ function IntroExperience() {
     return () => clearInterval(timer);
   }, [mode]);
 
-  // 현재 스테이지 대사 데이터
   const currentStageConfig = useMemo(() => {
     const prevChoice = currentStage > 1 ? userChoices[(currentStage - 1) as StageNumber] : undefined;
     return stageData(currentStage, prevChoice);
@@ -179,12 +164,10 @@ function IntroExperience() {
   const showHijackCard = shouldShowHijackCard(userChoices);
 
   const handleDismiss = useCallback(() => {
-    // 재방문 시 다시 뜨지 않도록 브라우저에 기록한다.
     markIntroSeen();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [markIntroSeen]);
 
-  // ESC 키로 건너뛰기
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") handleDismiss();
@@ -193,7 +176,6 @@ function IntroExperience() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleDismiss]);
 
-  // 뷰포트가 프레임보다 짧거나 좁으면 잘리지 않게 프레임 전체를 축소한다.
   useEffect(() => {
     const updateScale = () => {
       const next = computeFrameScale(window.innerWidth, window.innerHeight);
@@ -210,7 +192,6 @@ function IntroExperience() {
     };
   }, []);
 
-  // 모달이므로 Tab 초점이 뒤쪽 페이지로 새어 나가지 않게 가둔다.
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -285,9 +266,6 @@ function IntroExperience() {
     setSlideX(0);
   };
 
-  // =========================================================
-  // 밀어서 통화하기 (Slide to Answer)
-  // =========================================================
   const handleTouchStart = () => setIsDragging(true);
 
   // 드래그 중에만 window 리스너를 단다. 핸들러를 effect 안에 두어야
@@ -344,7 +322,6 @@ function IntroExperience() {
       tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/85 p-2 sm:p-4 text-white outline-none backdrop-blur-md animate-in fade-in duration-200"
     >
-      {/* 우측 상단 건너뛰기 버튼 */}
       <button
         type="button"
         onClick={handleDismiss}
@@ -354,9 +331,6 @@ function IntroExperience() {
         <X className="h-3.5 w-3.5" />
       </button>
 
-      {/* 정통 최신 iPhone 하드웨어 섀시 (다이나믹 아일랜드 & 슬림 베젤 & 물리 버튼) */}
-      {/* 뷰포트가 짧으면 잘리지 않게, 바깥 상자가 축소된 실제 크기를 차지하고
-          안쪽 프레임을 통째로 scale 한다. */}
       <div
         className="relative z-10 my-auto shrink-0"
         style={{
@@ -374,12 +348,10 @@ function IntroExperience() {
           }}
         >
         
-          {/* 좌측 물리 버튼 */}
           <div className="hidden sm:block absolute -left-[7px] top-24 h-7 w-[4px] rounded-l-[3px] bg-zinc-700 shadow-sm" />
           <div className="hidden sm:block absolute -left-[7px] top-36 h-12 w-[4px] rounded-l-[3px] bg-zinc-700 shadow-sm" />
           <div className="hidden sm:block absolute -left-[7px] top-52 h-12 w-[4px] rounded-l-[3px] bg-zinc-700 shadow-sm" />
 
-          {/* 우측 물리 전원 버튼: 수신 중에만 실제로 거절 동작을 한다. */}
           {mode === "ringing" ? (
             <button
               type="button"
@@ -394,17 +366,11 @@ function IntroExperience() {
             />
           )}
 
-          {/* 메인 iPhone 디스플레이 바디 (슬림 베젤, 50px 코너 라운드) */}
           <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[50px] border-[5px] border-black bg-[#1a1b22] text-white shadow-[0_0_0_3px_#2a2b30,0_25px_65px_-15px_rgba(0,0,0,0.95)]">
 
-            {/* 네 화면이 같은 배경을 공유한다. 발신자 그림은 수신·통화에만 올린다. */}
             <CallerShadow caller={mode === "ringing" || mode === "call"} />
 
-            {/* ========================================================= */}
-            {/* iOS 상단 상태 표시줄 & Dynamic Island                     */}
-            {/* ========================================================= */}
             <div className="relative z-30 flex items-center justify-between px-6 pt-3 select-none text-white">
-              {/* 좌측: 실시간 시각 + 위치 화살표 */}
               <div className="flex items-center gap-1.5 pl-0.5">
                 <span className="font-semibold tracking-tight text-[13.5px] leading-none tabular-nums font-sans">
                   {currentTime}
@@ -417,10 +383,6 @@ function IntroExperience() {
                 </svg>
               </div>
 
-              {/*
-                중앙: 최신 iPhone Dynamic Island (순정 알약 형태).
-                잠금화면에서는 실제 기기처럼 자물쇠가 섬 안에 들어간다.
-              */}
               <div className="absolute left-1/2 top-2 -translate-x-1/2 flex items-center justify-between rounded-full bg-black px-3 py-1 ring-1 ring-zinc-800 w-[96px] h-[28px]">
                 {mode === "declined" ? (
                   <>
@@ -435,7 +397,6 @@ function IntroExperience() {
                 )}
               </div>
 
-              {/* 우측: 셀룰러 4바 + 5G + 정통 iOS 배터리 */}
               <div className="flex items-center gap-[4px] pr-0.5 text-white">
                 <div className="flex items-end gap-[1.5px] h-[11px] pb-[0.5px]">
                   <span className="w-[3px] h-[3px] bg-white rounded-[0.8px]" />
@@ -457,14 +418,9 @@ function IntroExperience() {
               </div>
             </div>
 
-            {/* ========================================================= */}
-            {/* 1. 보이스피싱 전화 수신 화면 (Ringing - Slide to Answer)    */}
-            {/* ========================================================= */}
             {mode === "ringing" && (
               <div className="relative z-10 flex flex-1 flex-col justify-between pt-6 pb-4 px-6 animate-in fade-in duration-200 select-none">
-                {/* 상단 발신 정보 */}
                 <div className="text-center pt-5">
-                  {/* 통화 중 화면의 전화번호와 같은 글씨로 맞춘다. */}
                   <h2 className="text-[33px] font-medium tracking-tight text-white font-sans leading-none">
                     {INTRO_CALLER_NUMBER}
                   </h2>
@@ -473,10 +429,8 @@ function IntroExperience() {
                   </p>
                 </div>
 
-                {/* 중간 여백 */}
                 <div className="flex-1" />
 
-                {/* 하단 기능 그룹: 둘 다 '전화를 받지 않는다'는 실제 동작으로 이어진다. */}
                 <div className="flex items-center justify-between px-10 mb-8 text-white">
                   <button
                     type="button"
@@ -499,7 +453,6 @@ function IntroExperience() {
                   </button>
                 </div>
 
-                {/* 하단 [밀어서 통화하기] 슬라이더 캡슐 */}
                 <div className="pb-2">
                   <div
                     ref={sliderTrackRef}
@@ -511,11 +464,6 @@ function IntroExperience() {
                       </span>
                     </div>
 
-                    {/*
-                      밀어서만 받을 수 있다. 키보드로 조작할 수 없으므로 초점을
-                      받지 않는 요소로 둔다. 버튼으로 두면 Tab이 닿는데 Enter가
-                      먹지 않아 막다른 길이 되고, 초점 테두리까지 떠 버린다.
-                    */}
                     <div
                       ref={sliderKnobRef}
                       aria-hidden="true"
@@ -534,16 +482,9 @@ function IntroExperience() {
               </div>
             )}
 
-            {/* ========================================================= */}
-            {/* 2. 거절 시 화면: 최신 iOS 잠금화면 + 영장 위협 푸시 알림    */}
-            {/* ========================================================= */}
             {mode === "declined" && (
               <div className="relative z-10 flex flex-1 flex-col justify-between py-4 px-5 animate-in fade-in duration-200">
                 <div>
-                  {/*
-                    날짜·시계는 통화 중 화면의 경과 시간·전화번호와 같은 글씨를
-                    쓴다. 자물쇠는 실제 기기처럼 Dynamic Island 안에 있다.
-                  */}
                   <div className="flex flex-col items-center pt-3 text-center">
                     <p className="text-[16px] font-normal tracking-tight text-white/85 font-sans tabular-nums">
                       {currentDateStr}
@@ -553,7 +494,6 @@ function IntroExperience() {
                     </span>
                   </div>
 
-                  {/* iOS 메시지 푸시 알림 배너 */}
                   <button
                     type="button"
                     onClick={handleAcceptCall}
@@ -583,7 +523,6 @@ function IntroExperience() {
                     </p>
                   </button>
 
-                  {/* 현실적 해설 안내 */}
                   <div className="mt-5 rounded-2xl bg-zinc-900/60 p-3.5 border border-white/5 text-left text-xs leading-relaxed text-zinc-400">
                     <p className="text-zinc-200 font-semibold mb-1 text-[11px]">전화를 끊어도 끝이 아닙니다</p>
                     실제 피싱 조직은 통화가 끊기면 이런 위조 영장 문자를 보내 다시 전화를 걸게 만듭니다.
@@ -591,7 +530,6 @@ function IntroExperience() {
                   </div>
                 </div>
 
-                {/* 하단 손전등 / 카메라 원형 버튼 */}
                 <div className="flex items-center justify-between px-3 pb-2">
                   <div
                     aria-hidden="true"
@@ -616,13 +554,9 @@ function IntroExperience() {
               </div>
             )}
 
-            {/* ========================================================= */}
-            {/* 3. 실전 3단계 통화 화면 (보내주신 스크린샷 100% 동일 구현) */}
-            {/* ========================================================= */}
             {mode === "call" && (
               <div className="relative z-10 flex flex-1 flex-col justify-between pt-6 pb-2 px-3 animate-in fade-in duration-300 select-none">
               
-                {/* 상단: 통화 경과 시간 & 전화번호 (Dynamic Island 아래 여유로운 여백 pt-7) */}
                 <div className="text-center pt-7 pb-1">
                   <p className="text-[16px] font-normal tracking-tight text-white/85 font-sans tabular-nums">
                     {formatCallDuration(callDuration)}
@@ -632,9 +566,7 @@ function IntroExperience() {
                   </h2>
                 </div>
 
-                {/* 중앙: 실시간 통화 음성 말풍선 & 나의 대답 선택 */}
                 <div className="my-auto py-1 space-y-3">
-                  {/* 피싱범(수사관) 실시간 전사 말풍선 */}
                   <div aria-live="polite">
                     <TypedScript
                       key={currentStage}
@@ -642,7 +574,6 @@ function IntroExperience() {
                     />
                   </div>
 
-                  {/* 나의 대답 선택지 */}
                   <div className="space-y-1.5">
                     <p className="text-[11px] text-white/60 text-center font-medium">
                       내 대답 선택 ({currentStage}/3)
@@ -662,10 +593,8 @@ function IntroExperience() {
                   </div>
                 </div>
 
-                {/* 하단: 스크린샷 100% 동일 순정 6버튼 그리드 (Apple 순정 SF Symbols & 한국어 라벨) */}
                 <div className="pt-1 pb-1">
                   <div className="grid grid-cols-3 gap-y-3 px-3 text-white text-center font-sans">
-                    {/* 1행 1열: 스피커 (오디오가 없는 체험이라 장식) */}
                     <div aria-hidden="true" className="flex flex-col items-center gap-1.5 opacity-60">
                       <div className="h-[56px] w-[56px] rounded-full bg-white/[0.18] backdrop-blur-xl border border-white/10 flex items-center justify-center text-white">
                         <SpeakerWave3FillIcon className="h-[22px] w-[22px]" />
@@ -673,7 +602,6 @@ function IntroExperience() {
                       <span className="text-[12px] font-normal text-white/80">스피커</span>
                     </div>
 
-                    {/* 1행 2열: FaceTime (체험에 없는 기능이라 장식) */}
                     <div aria-hidden="true" className="flex flex-col items-center gap-1.5 opacity-60">
                       <div className="h-[56px] w-[56px] rounded-full bg-white/[0.18] backdrop-blur-xl border border-white/10 flex items-center justify-center text-white">
                         <VideoFillIcon className="h-[25px] w-[25px]" />
@@ -681,7 +609,6 @@ function IntroExperience() {
                       <span className="text-[12px] font-normal text-white/80">FaceTime</span>
                     </div>
 
-                    {/* 1행 3열: 소리 끔 (마이크 입력이 없는 체험이라 장식) */}
                     <div aria-hidden="true" className="flex flex-col items-center gap-1.5 opacity-60">
                       <div className="h-[56px] w-[56px] rounded-full bg-white/[0.18] backdrop-blur-xl border border-white/10 flex items-center justify-center text-white">
                         <MicSlashFillIcon className="h-[22px] w-[22px]" />
@@ -689,7 +616,6 @@ function IntroExperience() {
                       <span className="text-[12px] font-normal text-white/80">소리 끔</span>
                     </div>
 
-                    {/* 2행 1열: 더 보기 (체험에 없는 기능이라 장식) */}
                     <div aria-hidden="true" className="flex flex-col items-center gap-1.5 opacity-60">
                       <div className="h-[56px] w-[56px] rounded-full bg-white/[0.18] backdrop-blur-xl border border-white/10 flex items-center justify-center text-white">
                         <EllipsisIcon className="h-[22px] w-[22px]" />
@@ -697,7 +623,6 @@ function IntroExperience() {
                       <span className="text-[12px] font-normal text-white/80">더 보기</span>
                     </div>
 
-                    {/* 2행 2열: 종료 (End) */}
                     <div className="flex flex-col items-center gap-1.5">
                       <button
                         type="button"
@@ -710,7 +635,6 @@ function IntroExperience() {
                       <span className="text-[12px] font-normal text-white/90">종료</span>
                     </div>
 
-                    {/* 2행 3열: 키패드 (체험에 없는 기능이라 장식) */}
                     <div aria-hidden="true" className="flex flex-col items-center gap-1.5 opacity-60">
                       <div className="h-[56px] w-[56px] rounded-full bg-white/[0.18] backdrop-blur-xl border border-white/10 flex items-center justify-center text-white">
                         <KeypadIcon className="h-[22px] w-[22px]" />
@@ -723,13 +647,9 @@ function IntroExperience() {
               </div>
             )}
 
-            {/* ========================================================= */}
-            {/* 4. 통화 종료 후 최근 통화 & 경각심 분석 리포트             */}
-            {/* ========================================================= */}
             {mode === "verdict" && (
               <div className="relative z-10 flex flex-1 flex-col justify-between py-2 px-3 animate-in fade-in duration-200 text-left overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="pt-1">
-                  {/* 상단 최근 통화 헤더 */}
                   <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
                     <div>
                       <p className="text-sm font-semibold text-[#FF3B30]">
@@ -763,7 +683,6 @@ function IntroExperience() {
                     {verdict.summary}
                   </p>
 
-                  {/* 단계별로 어떤 선택을 했는지 되짚어 준다. */}
                   <ul className="mt-2.5 space-y-1.5">
                     {([1, 2, 3] as StageNumber[]).map((stage) => {
                       const blocked = userChoices[stage] === SAFE_CHOICE;
@@ -814,7 +733,6 @@ function IntroExperience() {
                   </div>
                 </div>
 
-                {/* 하단 iOS 스타일 액션 버튼 */}
                 <div className="space-y-1 pt-2 pb-1">
                   <Button
                     type="button"
@@ -837,9 +755,6 @@ function IntroExperience() {
               </div>
             )}
 
-            {/* ========================================================= */}
-            {/* iOS 정통 홈 인디케이터 (Home Bar)                          */}
-            {/* ========================================================= */}
             <div className="relative z-30 pt-1 pb-1 select-none">
               <div className="mx-auto h-[4px] w-32 rounded-full bg-white/70" />
             </div>

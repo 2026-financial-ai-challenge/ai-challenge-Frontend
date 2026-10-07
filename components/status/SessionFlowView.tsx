@@ -75,7 +75,6 @@ function statusCardCopy(
   return callCopy.completed;
 }
 
-/** 완료된 세션들 중 이 세션이 몇 번째인지. 목록에 없으면 null. */
 function sessionOrdinal(sessions: Session[], sessionId: string): number | null {
   const index = sessions
     .filter((item) => item.reportStatus === "final")
@@ -247,7 +246,6 @@ export function SessionFlowView() {
         queryKey: queryKeys.session(sessionId),
       });
     } catch {
-      // 오류 문구는 mutation 상태에서 읽는다.
     }
   };
 

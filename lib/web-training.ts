@@ -1,6 +1,5 @@
 import type { WebTrainingEventType } from "@/lib/types";
 
-/** 입력 없이 이 시간 안에 페이지를 떠나면 left_without_input으로 본다. */
 export const LEAVE_WITHOUT_INPUT_MS = 60_000;
 
 const DEFAULT_PORTAL_ORIGIN = "https://gaoncs.vercel.app";
@@ -12,7 +11,6 @@ export function webTrainingUrl(token: string): string {
   return `${origin}/t/${encodeURIComponent(token)}`;
 }
 
-/** 훈련 페이지에서 해설 화면으로 넘어가게 만드는 행동 */
 export type WebTrainingAction = Exclude<
   WebTrainingEventType,
   "link_opened" | "left_without_input"

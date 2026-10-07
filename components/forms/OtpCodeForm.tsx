@@ -26,7 +26,6 @@ function formatMmSs(totalSec: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-/** 두 마감 시각까지 남은 초를 1초마다 갱신한다. */
 function useCountdowns(expiresAt: number, resendAt: number) {
   const [now, setNow] = useState(() => Date.now());
 

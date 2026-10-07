@@ -13,16 +13,10 @@ type DraftTrainingReportProps = {
   status: "draft" | "unannounced" | "final";
   body: CallReport;
   turns: ReportTurn[];
-  /** 최종 리포트에서 각 행동이 어느 통화에서 나왔는지 표시하는 데 쓰는 통화별 리포트 */
   calls?: { announced: CallReport | null; unannounced: CallReport | null };
   webTraining?: WebTrainingReport | null;
 };
 
-/**
- * 리포트는 카드를 흩뿌리지 않고 통화 결과 통지서 한 장으로 둔다. 과감한 자리는
- * 맨 위 판정 밴드 하나뿐이고, 아래 본문은 종이처럼 조용히 둔다. 색은 위험·방어를
- * 가르는 데만 쓴다.
- */
 function Section({
   title,
   description,
@@ -45,7 +39,6 @@ function Section({
   );
 }
 
-/** 통과·미통과 표시. 동그란 아이콘 칩 대신 글리프만 둔다. */
 function ResultMark({ passed }: { passed: boolean }) {
   return (
     <svg
@@ -70,10 +63,6 @@ function ResultMark({ passed }: { passed: boolean }) {
   );
 }
 
-/**
- * 세 기준은 질문보다 답이 먼저 읽혀야 한다. 답을 크게 올리고 질문은 아래에
- * 작게 두며, 통과 여부는 타일 전체의 색으로 멀리서도 세어지게 한다.
- */
 function CriterionTile({
   question,
   passed,
@@ -136,7 +125,6 @@ export function DraftTrainingReport({
 }: DraftTrainingReportProps) {
   const isFinal = status === "final";
   const userTurns = turns.filter((turn) => turn.role === "user").slice(0, 4);
-  // 최종 리포트만 두 통화를 합친 목록이라 어느 통화에서 나온 행동인지 함께 표시한다.
   const compared = isFinal ? calls : undefined;
   const riskBehaviors = annotateBehaviorOrigins(
     body.riskBehaviors,
@@ -150,8 +138,6 @@ export function DraftTrainingReport({
   );
   const zone = scoreZone(body.score);
 
-  // 판정 밴드에 실제 발화를 한 줄 올린다. 점수가 낮으면 가장 위험했던 말을,
-  // 높으면 통화를 지켜낸 말을 뽑는다. 근거가 없는 행동은 인용할 게 없어 건너뛴다.
   const quotable = (items: AnnotatedBehavior[]) =>
     items.find((item) => item.evidence && item.evidence.trim().length > 0);
   const keyMoment =
@@ -172,7 +158,6 @@ export function DraftTrainingReport({
   return (
     <div>
       <article className="overflow-hidden break-keep rounded-2xl border border-border bg-card shadow-sheet">
-        {/* 종이 맨 윗선이 판정 색을 쥔다. 멀리서도 결과가 먼저 읽히게. */}
         <div className={`h-1.5 ${zone.band}`} aria-hidden />
 
         <header className="bg-primary-deep px-5 py-8 sm:px-9 sm:py-10 lg:px-11 lg:py-12">
@@ -256,7 +241,6 @@ export function DraftTrainingReport({
         ) : null}
 
         <Section title="위험했던 순간과 잘 막아낸 순간">
-          {/* 한쪽이 비면 판 높이를 맞추지 않는다. 빈 색면이 길게 남는 쪽이 더 나쁘다. */}
           <div className="grid items-start gap-5 lg:grid-cols-2">
             <BehaviorPanel
               title="조심해야 할 반응"

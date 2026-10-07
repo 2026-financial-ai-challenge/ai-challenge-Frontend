@@ -3,7 +3,6 @@ import { Fragment } from "react";
 
 const STEPS = ["훈련 전화", "1차 리포트", "불시 전화", "최종 리포트"];
 
-/** completed = 완료한 단계 수 (0~4). completed번째 단계가 "현재". */
 export function TrainingProgress({ completed }: { completed: number }) {
   return (
     <ol className="flex items-start">

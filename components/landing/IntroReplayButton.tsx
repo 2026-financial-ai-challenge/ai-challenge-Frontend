@@ -4,10 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useIntroHydrated, useIntroStore } from "@/lib/stores/intro-store";
 import { PhoneCall } from "lucide-react";
 
-/**
- * 인트로 체험은 한 번 보면 다시 뜨지 않는다.
- * 대신 진행 순서 아래에 언제든 다시 들어갈 수 있는 입구를 둔다.
- */
 export function IntroReplayButton() {
   const hydrated = useIntroHydrated();
   const seen = useIntroStore((state) => state.seen);

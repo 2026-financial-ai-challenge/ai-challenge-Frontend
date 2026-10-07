@@ -1,9 +1,4 @@
-/**
- * 랜딩 체험은 실제 훈련 시뮬레이션과 이어지지 않는 독립 데모다. 그래서 훈련
- * 시나리오가 쓰는 가상 포털(lib/portal.ts)과도 이름을 공유하지 않고, 이 화면
- * 전용 가상 기관을 쓴다. 실존 기관명·대표번호는 사칭 대사에 넣지 않는다 —
- * 체험의 실감은 기관명이 아니라 긴급성·비밀 유지·권위 압박에서 나온다.
- */
+// 실존 기관명·대표번호는 사칭 대사에 넣지 않는다. 랜딩 전용 가상 기관만 쓴다.
 export const INTRO_FAKE_AGENCY = "한울중앙수사청";
 export const INTRO_FAKE_UNIT = "금융범죄수사1부";
 export const INTRO_FAKE_SITE = `${INTRO_FAKE_AGENCY} 전자민원`;
@@ -76,7 +71,6 @@ export const STAGES_CONFIG: Record<
   }),
 };
 
-/** 세 단계 모두 B가 전화를 끊어내는 선택이다. */
 export const SAFE_CHOICE: ChoiceKey = "B";
 
 export const STAGE_REVIEW: Record<

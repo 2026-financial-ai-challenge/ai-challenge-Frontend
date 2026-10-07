@@ -1,4 +1,3 @@
-/** 서버가 알려주는 통화 상태. 웹에는 통화 UI를 두지 않는다. */
 export type CallStatus =
   | "waiting"
   | "calling"
@@ -7,7 +6,6 @@ export type CallStatus =
   | "silent"
   | "failed";
 
-/** 통화 종료 후 리포트 생성 단계. 통화 전이면 null 또는 none. */
 export type ReportStatus = "none" | "pending" | "draft" | "final" | "failed";
 
 export interface ConsentRecord {
@@ -16,18 +14,13 @@ export interface ConsentRecord {
   consentedAt: string;
 }
 
-/** 보이스피싱 시뮬레이션(사전 안내 후 발신) / 불시 보이스피싱 훈련(시점 비공개 발신) */
 export type TrainingType = "announced" | "unannounced";
 
 export interface Session {
   id: string;
-  /** 등록 전이면 null. 저장·표시 시 항상 마스킹된 값만 사용 */
   phoneNumberMasked: string | null;
-  /** 전화번호 등록 전이면 null */
   callStatus: CallStatus | null;
-  /** 발신 전이면 null */
   callId: string | null;
-  /** 통화 전이면 null. draft면 1차, final이면 최종 리포트 */
   reportStatus: ReportStatus | null;
   currentTrainingType: TrainingType;
   consents: ConsentRecord;
@@ -74,7 +67,6 @@ export interface CallReport {
   source: string;
 }
 
-/** 웹 링크 훈련에서 프론트가 보내는 행동. 입력값은 보내지 않고 행동 종류만 보낸다. */
 export type WebTrainingEventType =
   | "link_opened"
   | "identity_submitted"
@@ -84,10 +76,8 @@ export type WebTrainingEventType =
   | "report_clicked"
   | "left_without_input";
 
-/** 기준 60점에서 행동별로 가감한 웹 링크 훈련 결과 */
 export interface WebTrainingReport {
   score: number;
-  /** 처음 일어난 순서대로, 중복 없이 */
   events: WebTrainingEventType[];
   riskBehaviors: ReportBehavior[];
   defenseBehaviors: ReportBehavior[];
@@ -108,7 +98,6 @@ export interface GetReportResponse {
   unannounced?: CallReport | null;
   final: CallReport | null;
   clawopsSummary?: unknown;
-  /** 웹 링크 훈련을 진행하지 않았으면 없거나 null */
   webTraining?: WebTrainingReport | null;
 }
 
