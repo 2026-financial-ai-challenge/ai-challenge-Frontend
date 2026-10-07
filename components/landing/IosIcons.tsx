@@ -134,7 +134,6 @@ export function LockFillIcon({ className }: IconProps) {
 }
 
 export function FlashlightFillIcon({ className }: IconProps) {
-  // useId()는 콜론을 포함하므로 SVG 프래그먼트 참조용으로 제거한다.
   const maskId = `flashlight-${React.useId().replace(/:/g, "")}`;
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
@@ -154,7 +153,6 @@ export function FlashlightFillIcon({ className }: IconProps) {
 }
 
 export function CameraFillIcon({ className }: IconProps) {
-  // useId()는 콜론을 포함하므로 SVG 프래그먼트 참조용으로 제거한다.
   const maskId = `camera-${React.useId().replace(/:/g, "")}`;
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
