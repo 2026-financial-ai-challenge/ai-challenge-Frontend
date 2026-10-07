@@ -37,7 +37,6 @@ export function ReportCollection({
   const latest: ReportKey = final ? "final" : unannounced ? "unannounced" : "draft";
   const [selected, setSelected] = useState<ReportKey>(latest);
 
-  // 선택했던 리포트가 갱신으로 사라지면 가장 최신 리포트로 되돌린다.
   const active = reports[selected] ? selected : latest;
   const body = reports[active];
   if (!body) return null;
@@ -49,7 +48,6 @@ export function ReportCollection({
   return (
     <div>
       {available.length > 1 ? (
-        // 세 리포트는 같은 훈련의 서로 다른 장이라, 알약 버튼보다 문서 탭처럼 둔다.
         <div className="mb-6 flex gap-6 border-b border-border" aria-label="리포트 선택">
           {available.map((key) => (
             <button
