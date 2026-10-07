@@ -254,7 +254,7 @@ export function DraftTrainingReport({
               description="피싱 상황에서 나를 보호하는 데 도움이 된 행동이에요."
               items={toPanelItems(defenseBehaviors)}
               tone="success"
-              emptyText="막아낸 반응이 없었어요. 아래 세 가지부터 연습해 보세요."
+              emptyText="막아낸 반응이 없었어요."
             />
           </div>
         </Section>
