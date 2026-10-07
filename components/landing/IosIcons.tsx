@@ -6,7 +6,6 @@ interface IconProps {
   className?: string;
 }
 
-/** iOS phone.fill — 꽉 찬 수화기. 기본 각도가 수신(통화하기)이다. */
 const HANDSET_PATH =
   "M9.36 4.21c-.5-1.02-1.72-1.45-2.74-.95l-2.2 1.08C3.2 4.96 2.55 6.3 2.84 7.6c.82 3.6 2.66 6.9 5.32 9.56 2.66 2.66 5.96 4.5 9.56 5.32 1.3.29 2.64-.36 3.26-1.58l1.08-2.2c.5-1.02.07-2.24-.95-2.74l-3.2-1.6c-.94-.47-2.08-.2-2.7.64l-.92 1.24a15.3 15.3 0 0 1-2.31-1.82 15.3 15.3 0 0 1-1.82-2.31l1.24-.92c.84-.62 1.11-1.76.64-2.7l-1.68-3.28z";
 
@@ -22,17 +21,14 @@ function PhoneHandset({ className, rotate = 0 }: IconProps & { rotate?: number }
   );
 }
 
-/** 슬라이더 수신 아이콘 — 수화기를 세운 기본 각도 */
 export function PhoneFillIcon({ className }: IconProps) {
   return <PhoneHandset className={className} />;
 }
 
-/** 통화 종료 아이콘 — iOS phone.down.fill과 같이 135° 기울인다. */
 export function PhoneDownFillIcon({ className }: IconProps) {
   return <PhoneHandset className={className} rotate={135} />;
 }
 
-/** mic.slash.fill */
 export function MicSlashFillIcon({ className }: IconProps) {
   // useId()는 콜론을 포함하므로 SVG 프래그먼트 참조용으로 제거한다.
   const maskId = `mic-slash-${React.useId().replace(/:/g, "")}`;
@@ -52,7 +48,6 @@ export function MicSlashFillIcon({ className }: IconProps) {
   );
 }
 
-/** speaker.wave.3.fill */
 export function SpeakerWave3FillIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
@@ -67,7 +62,6 @@ export function SpeakerWave3FillIcon({ className }: IconProps) {
   );
 }
 
-/** video.fill */
 export function VideoFillIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
@@ -77,7 +71,6 @@ export function VideoFillIcon({ className }: IconProps) {
   );
 }
 
-/** ellipsis */
 export function EllipsisIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
@@ -88,7 +81,6 @@ export function EllipsisIcon({ className }: IconProps) {
   );
 }
 
-/** circle.grid.3x3.fill */
 export function KeypadIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
@@ -105,7 +97,6 @@ export function KeypadIcon({ className }: IconProps) {
   );
 }
 
-/** alarm.fill */
 export function AlarmFillIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
@@ -120,7 +111,6 @@ export function AlarmFillIcon({ className }: IconProps) {
   );
 }
 
-/** message.fill */
 export function MessageFillIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
@@ -129,7 +119,6 @@ export function MessageFillIcon({ className }: IconProps) {
   );
 }
 
-/** lock.fill — 잠금화면 상단 자물쇠 */
 export function LockFillIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
@@ -144,7 +133,6 @@ export function LockFillIcon({ className }: IconProps) {
   );
 }
 
-/** flashlight.off.fill — 잠금화면 좌측 하단 손전등 */
 export function FlashlightFillIcon({ className }: IconProps) {
   // useId()는 콜론을 포함하므로 SVG 프래그먼트 참조용으로 제거한다.
   const maskId = `flashlight-${React.useId().replace(/:/g, "")}`;
@@ -152,26 +140,19 @@ export function FlashlightFillIcon({ className }: IconProps) {
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
       <mask id={maskId}>
         <rect width="24" height="24" fill="white" />
-        {/* 헤드 아래 구분선과 몸통의 스위치 홈을 파낸다. */}
         <rect x="7.6" y="5.2" width="8.8" height="0.9" fill="black" />
         <rect x="11.05" y="10" width="1.9" height="5.2" rx="0.95" fill="black" />
       </mask>
-      {/*
-        실물은 네 부분이다 — 넓은 헤드, 그 아래 가로 구분선, 몸통 폭으로
-        좁아지는 사다리꼴 어깨, 스위치 홈이 파인 몸통.
-      */}
       <g fill="currentColor" mask={`url(#${maskId})`}>
         <rect x="7.6" y="2.3" width="8.8" height="2.9" rx="0.8" />
         <path d="M7.9 6h8.2l-1.45 3.5H9.35z" />
         <rect x="9.4" y="9.2" width="5.2" height="12.5" rx="1.5" />
       </g>
-      {/* 스위치 손잡이 — 파낸 홈 안에 들어간다. */}
       <circle cx="12" cy="14" r="0.8" fill="currentColor" />
     </svg>
   );
 }
 
-/** camera.fill — 잠금화면 우측 하단 카메라 */
 export function CameraFillIcon({ className }: IconProps) {
   // useId()는 콜론을 포함하므로 SVG 프래그먼트 참조용으로 제거한다.
   const maskId = `camera-${React.useId().replace(/:/g, "")}`;
@@ -179,16 +160,13 @@ export function CameraFillIcon({ className }: IconProps) {
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
       <mask id={maskId}>
         <rect width="24" height="24" fill="white" />
-        {/* 렌즈 바깥 원과 오른쪽 위 플래시를 뚫는다. */}
         <circle cx="12" cy="12.8" r="4.05" fill="black" />
         <circle cx="18.2" cy="9.6" r="1.05" fill="black" />
       </mask>
-      {/* 뷰파인더 돌출부는 렌즈 위 가운데에 올라온다. */}
       <g mask={`url(#${maskId})`} fill="currentColor">
         <path d="M8.5 4.2h7a1 1 0 0 1 .95.68l.42 1.2H7.13l.42-1.2A1 1 0 0 1 8.5 4.2z" />
         <rect x="2.2" y="5.6" width="19.6" height="14.2" rx="1.9" />
       </g>
-      {/* 렌즈는 구멍이 아니라 고리다. 뚫은 원 안에 알이 다시 들어간다. */}
       <circle cx="12" cy="12.8" r="2.05" fill="currentColor" />
     </svg>
   );

@@ -24,7 +24,6 @@ export function PortalChrome({
 }: {
   children: ReactNode;
   active?: string;
-  /** 포털 내부 경로를 실제 링크로 바꾼다. 훈련 링크에서는 토큰 경로 안에 머문다. */
   hrefFor?: (path: string) => string;
   utility?: ReactNode;
 }) {

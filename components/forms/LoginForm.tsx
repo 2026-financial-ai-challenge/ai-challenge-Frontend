@@ -27,7 +27,6 @@ export function LoginForm() {
       setAuth(auth.accessToken, auth.participant, auth.expiresInSec);
       router.push(postLoginPath(auth.participant.hasConsented, nextPath));
     } catch {
-      // 오류 문구는 mutation 상태에서 읽는다.
     }
   };
 

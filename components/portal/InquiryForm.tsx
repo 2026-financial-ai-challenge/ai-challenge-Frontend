@@ -10,7 +10,6 @@ export function InquiryForm({
   caseNoLinked = false,
 }: {
   onSubmitted?: () => void;
-  /** 문자 링크에 사건이 연결돼 있으면 사건번호 없이 성명만 받는다. */
   caseNoLinked?: boolean;
 }) {
   const router = useRouter();

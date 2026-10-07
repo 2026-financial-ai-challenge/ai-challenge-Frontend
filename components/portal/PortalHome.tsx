@@ -8,7 +8,6 @@ export function PortalHome({
   notice,
 }: {
   hrefFor?: (path: string) => string;
-  /** 배너와 온라인민원 사이에 끼우는 안내 영역 */
   notice?: ReactNode;
 }) {
   return (

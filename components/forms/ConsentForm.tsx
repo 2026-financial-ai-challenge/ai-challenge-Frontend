@@ -65,7 +65,6 @@ export function ConsentForm() {
       markConsented();
       router.push(`/status/${sessionId}`);
     } catch {
-      // 401은 api 레이어에서 로그인으로 보낸다. 그 외 오류는 mutation 상태에서 읽는다.
     }
   };
 

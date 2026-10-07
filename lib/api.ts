@@ -35,20 +35,6 @@ import type {
 } from "@/lib/types";
 import type { ZodTypeAny } from "zod";
 
-/**
- * POST /v1/auth/signup/otp
- * POST /v1/auth/signup/verify
- * POST /v1/auth/signup
- * POST /v1/auth/login
- * POST /v1/consents  — Bearer 필수. 회원 동의를 확인한 뒤 세션 생성 + 훈련 발신
- * POST /v1/sessions/:sessionId/calls
- * GET  /v1/sessions  — Bearer 필수. 로그인한 계정 소유 세션 전체 목록
- * GET  /v1/sessions/:sessionId
- * GET  /v1/sessions/:sessionId/report
- * POST /v1/web-training/sessions/:sessionId/link  — Bearer 필수. 웹 훈련 링크 토큰 발급
- * GET  /v1/web-training/:token  — 링크 유효성 확인 (만료 410, 없음 404)
- * POST /v1/web-training/:token/events  — { eventType } 만 보낸다 → 204
- */
 export interface ApiClient {
   requestSignupOtp(body: RequestSignupOtpRequest): Promise<RequestSignupOtpResponse>;
   verifySignupOtp(body: VerifySignupOtpRequest): Promise<VerifySignupOtpResponse>;
@@ -64,7 +50,6 @@ export interface ApiClient {
   sendWebTrainingEvent(token: string, eventType: WebTrainingEventType): void;
 }
 
-/** 브라우저는 same-origin `/v1`을 호출하고, Next rewrites가 백엔드로 넘긴다. */
 const BASE_URL = "";
 
 function authHeaders(): HeadersInit {
@@ -80,7 +65,6 @@ function parseBody<T>(schema: ZodTypeAny, data: unknown): T {
   return parsed.data as T;
 }
 
-/** 본문을 파싱하지 않는 호출(204 등)도 있으므로 Response를 그대로 돌려준다. */
 async function send(path: string, init?: RequestInit): Promise<Response> {
   if (expireAuthIfNeeded() && !isPublicAuthPath(path)) {
     handleUnauthorized();

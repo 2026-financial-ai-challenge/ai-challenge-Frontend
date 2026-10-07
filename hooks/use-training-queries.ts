@@ -31,7 +31,6 @@ export const queryKeys = {
   sessions: ["sessions"] as const,
 };
 
-/** 통화는 끝났는데 리포트가 오지 않은 채 자동 확인 시간이 지났는지. */
 export function useReportWaitExpired(session: Session | undefined): boolean {
   const waiting =
     session?.callStatus === "completed" &&

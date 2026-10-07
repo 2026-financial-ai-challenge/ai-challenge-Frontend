@@ -49,7 +49,6 @@ export function SignupForm() {
   const [enteredPhone, setEnteredPhone] = useState("");
   const [otpTicket, setOtpTicket] = useState<OtpTicket | null>(null);
   const [verified, setVerified] = useState<VerifiedTicket | null>(null);
-  /** 같은 오류가 반복돼도 폼을 다시 마운트하기 위한 카운터. */
   const [errorNonce, setErrorNonce] = useState(0);
 
   const bumpErrorNonce = () => setErrorNonce((value) => value + 1);
@@ -155,7 +154,6 @@ export function SignupForm() {
   }
 
   if (otpTicket) {
-    // 요청 실패가 우선이고, 없으면 확인 실패를 보여 준다.
     const failure = requestOtpMutation.isError
       ? { error: requestOtpMutation.error, fallback: OTP_REQUEST_FAILED }
       : verifyOtpMutation.isError

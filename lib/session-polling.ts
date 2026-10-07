@@ -4,9 +4,7 @@ export const SESSION_POLL_MS = 3000;
 export const SESSION_POLL_CAP_MS = 180_000;
 export const REPORT_POLL_MS = 15_000;
 
-/** 녹음 전사 기반 최종 리포트는 통화 종료 후 몇 분 뒤에 올 수 있다. */
 export const REPORT_WAIT_LIMIT_MS = 10 * 60_000;
-/** 1분이 지나면 리포트를 덜 자주 확인한다. */
 export const REPORT_WAIT_SLOW_AFTER_MS = 60_000;
 export const REPORT_WAIT_SLOW_POLL_MS = 10_000;
 
@@ -16,7 +14,6 @@ type PollSession = {
   updatedAt: string;
 };
 
-/** 통화가 끝난 뒤 리포트를 기다린 시간. updatedAt을 못 읽으면 폴링 시작 시점으로 센다. */
 export function reportWaitElapsed(
   session: Pick<PollSession, "updatedAt">,
   now: number,
@@ -64,7 +61,6 @@ export function nextSessionPoll(input: {
     return { interval: false, startedAt, lastStatus };
   }
 
-  // 통화가 끝났으면 발신 제한시간이 아니라 리포트 대기시간으로 센다.
   if (session.callStatus === "completed") {
     const waited = reportWaitElapsed(session, input.now, startedAt);
     if (waited > REPORT_WAIT_LIMIT_MS) {

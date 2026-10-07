@@ -36,10 +36,7 @@ function trainingHref(token: string) {
   };
 }
 
-/**
- * 같은 브라우저에서 링크를 다시 열어도 link_opened가 중복되지 않고, 위험 행동 뒤에는
- * 만료 화면이 나오도록 토큰별로 기록한다. 백엔드는 행동 뒤에도 링크를 닫지 않는다.
- */
+// 백엔드는 행동 뒤에도 링크를 닫지 않으므로, 중복 이벤트·재진입 방지를 위해 토큰별로 기록한다.
 function storageKey(token: string, name: "opened" | "left" | "result") {
   return `web-training:${token}:${name}`;
 }

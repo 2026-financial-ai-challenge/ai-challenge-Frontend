@@ -1,14 +1,9 @@
 type ScoreGaugeProps = {
   score: number;
   label?: string;
-  /**
-   * "compact"는 보조 지표로 쓸 때(예: 목록 한 줄)의 한 줄짜리 표기.
-   * "hero"는 리포트 맨 위 짙은 판정 밴드 위에서 쓰는 큰 표기.
-   */
   variant?: "full" | "compact" | "hero";
 };
 
-/** 구간 경계. 눈금의 너비와 바늘 위치가 모두 이 값을 쓴다. */
 const ZONES = [
   {
     start: 0,
@@ -52,11 +47,6 @@ export function scoreZone(score: number): ScoreZone {
   return ZONES.find((zone) => clamped < zone.end) ?? ZONES[ZONES.length - 1];
 }
 
-/**
- * 점수를 0~100 눈금 위의 한 지점으로 읽는다. 채워지는 막대를 쓰지 않는 이유는
- * 채움 막대가 "얼마나 진행됐나"로 읽히기 때문이다. 여기서 점수는 진행률이 아니라
- * 세 구간 중 어디에 섰는지를 가리키는 측정값이다.
- */
 export function ScoreGauge({
   score,
   label = "시뮬레이션 상황 대응 점수",
@@ -86,7 +76,6 @@ export function ScoreGauge({
     );
   }
 
-  // 짙은 바탕 위에서는 구간 색을 밝은 짝으로 바꾸고, 꺼진 구간은 흰색을 낮춰 쓴다.
   const onDark = variant === "hero";
 
   return (
@@ -118,7 +107,6 @@ export function ScoreGauge({
       )}
 
       <div className={onDark ? "mt-6" : "mt-4"} aria-hidden>
-        {/* 바늘 */}
         <div className="relative h-2">
           <span
             className="absolute bottom-0 -translate-x-1/2"
@@ -133,7 +121,6 @@ export function ScoreGauge({
           </span>
         </div>
 
-        {/* 눈금 띠. 서 있는 구간만 또렷하고 나머지는 연하게 둔다. */}
         <div
           className={`relative flex overflow-hidden rounded-full ${
             onDark ? "mt-1.5 h-2" : "mt-1 h-1.5"

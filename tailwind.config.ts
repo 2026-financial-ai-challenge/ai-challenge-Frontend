@@ -28,7 +28,6 @@ const config: Config = {
           DEFAULT: "#1F3A5F",
           light: "#E7EBEF",
           hover: "#16293F",
-          /** 리포트 판정 밴드처럼 종이 위에 한 번만 쓰는 짙은 바탕 */
           deep: "#15263C",
           foreground: "#FFFFFF",
         },
@@ -48,7 +47,6 @@ const config: Config = {
           DEFAULT: "#B3402D",
           foreground: "#FFFFFF",
         },
-        /** bright는 짙은 바탕(primary-deep) 위에서 쓰는 밝은 짝. */
         danger: {
           DEFAULT: "#C25A46",
           light: "#F6E9E5",
@@ -83,7 +81,6 @@ const config: Config = {
       },
       boxShadow: {
         card: "0 1px 2px rgba(32, 36, 43, 0.05)",
-        /** 회색 배경 위에 한 장으로 떠 있는 리포트 종이 */
         sheet: "0 1px 2px rgba(21, 38, 60, 0.04), 0 12px 32px -12px rgba(21, 38, 60, 0.18)",
       },
       borderRadius: {

@@ -6,7 +6,6 @@ type AuthPageShellProps = {
   children: ReactNode;
 };
 
-/** 로그인·회원가입·동의처럼 폼 하나만 세로 가운데에 두는 화면의 공통 틀. */
 export function AuthPageShell({
   title,
   description,
